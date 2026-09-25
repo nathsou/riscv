@@ -24,7 +24,7 @@ export interface ProgramImage { segments: Segment[]; entry: number }
 export type Status = 'ready' | 'halted' | 'error' | 'waiting' | 'break';
 
 /** Thrown internally when a syscall must wait for console input. */
-const BLOCK = Symbol('block');
+export const BLOCK = Symbol('block');
 
 interface ICacheEntry { word: number; exec: Exec; d: DecodedInsn }
 
@@ -432,17 +432,35 @@ export class Machine implements Hart {
     this.message = `${CAUSE_NAMES[t.cause] ?? 'Trap'}: ${t.message}`;
   }
 
-  /** Execute one instruction (or take one interrupt). */
-  step(): void {
+  /**
+   * Run one journaled step. `body` performs the state changes; synchronous
+   * traps and blocking syscalls are handled uniformly here, so hardware
+   * engines share the exact same exception semantics as the ISA simulator.
+   */
+  runStep(body: () => void): void {
     if (this.status === 'halted' || this.status === 'error') return;
     if (this.status === 'break') this.status = 'ready';
-    const pc = this.pc;
-    this.history.begin(pc, this.instret, this.cycles);
+    this.history.begin(this.pc, this.instret, this.cycles);
     this.lastRegWrite = -1;
     this.lastMemWrite = null;
     this.lastMemRead = null;
     this.lastTrap = null;
     try {
+      body();
+    } catch (err) {
+      if (err instanceof Trap) this.takeTrap(err);
+      else if (err === BLOCK) {
+        this.status = 'waiting';
+        this.message = 'Waiting for console input…';
+        this.undo();
+      } else throw err;
+    }
+  }
+
+  /** Execute one instruction (or take one interrupt). */
+  step(): void {
+    this.runStep(() => {
+      const pc = this.pc;
       const irq = this.pendingInterrupt();
       if (irq) {
         this.lastTrap = { cause: irq, tval: 0, message: CAUSE_NAMES[irq] };
@@ -465,14 +483,32 @@ export class Machine implements Hart {
       this.pc = this.nextPc;
       this.instret++;
       this.cycles++;
-    } catch (err) {
-      if (err instanceof Trap) this.takeTrap(err);
-      else if (err === BLOCK) {
-        this.status = 'waiting';
-        this.message = 'Waiting for console input…';
-        this.undo();
-      } else throw err;
+    });
+  }
+
+  /** Side-effect-free read (for datapath visualisation). */
+  peekLoad(addr: number, n: number): number {
+    addr >>>= 0;
+    if (addr >= MMIO_BASE) {
+      switch ((addr & ~3) >>> 0) {
+        case MMIO.CONSOLE_RX_READY: return this.consoleIn.length ? 1 : 0;
+        case MMIO.CONSOLE_RX: return this.consoleIn.length ? this.consoleIn.charCodeAt(0) & 0xff : 0;
+        case MMIO.KEY_READY: return this.keys.length ? 1 : 0;
+        case MMIO.KEY_CODE: return this.keys[0] ?? 0;
+        case MMIO.MTIME: return this.mtime | 0;
+        case MMIO.MTIMEH: return Math.floor(this.mtime / 2 ** 32) | 0;
+        case MMIO.MTIMECMP: return this.mtimecmp % 2 ** 32 | 0;
+        case MMIO.MTIMECMPH: return Math.floor(this.mtimecmp / 2 ** 32) | 0;
+        case MMIO.RANDOM: { let s = this.rng; s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return s | 0; }
+      }
+      return 0;
     }
+    return this.mem.readN(addr, n as 1 | 2 | 4);
+  }
+
+  /** Side-effect-free CSR read (unknown CSRs read as 0). */
+  csrPeek(addr: number): number {
+    try { return this.csrRead(addr); } catch { return 0; }
   }
 
   /**
