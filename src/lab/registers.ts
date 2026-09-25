@@ -1,6 +1,6 @@
 /** Register file panel: 32 integer registers + pc, flashing on change. */
 import { h } from '../ui/h.ts';
-import { effect } from '../ui/reactive.ts';
+import { effect, signal } from '../ui/reactive.ts';
 import { REGS } from '../isa/regs.ts';
 import { hex } from '../isa/bits.ts';
 import { session } from '../app/session.ts';
@@ -20,6 +20,10 @@ export function fmtValue(v: number, f: RegFormat): string {
 
 export function registersPanel(): HTMLElement {
   const m = session.machine;
+  const showAll = signal(false);
+  const allBtn = h('button', { class: 'btn small ghost', 'aria-pressed': 'false' });
+  allBtn.addEventListener('click', () => { showAll.value = !showAll.value; });
+  effect(() => { allBtn.textContent = showAll.value ? 'Active only' : 'All 32'; allBtn.setAttribute('aria-pressed', String(showAll.value)); });
   let format: RegFormat = 'hex';
   const fmtSel = h('select', { class: 'select tiny', 'aria-label': 'Number format' },
     ...(['hex', 'dec', 'udec', 'bin'] as RegFormat[]).map(f => h('option', { value: f }, f)));
@@ -60,6 +64,7 @@ export function registersPanel(): HTMLElement {
       }
       cells[i].row.classList.toggle('last', m.lastRegWrite === i);
       cells[i].row.classList.toggle('zero', v === 0);
+      cells[i].row.classList.toggle('hidden', !showAll.peek() && v === 0 && i !== 0 && i !== 1 && i !== 2 && i !== 3 && i !== m.lastRegWrite);
     }
     pcVal.textContent = hex(m.pc);
     if (m.pc !== prevPc) { prevPc = m.pc; }
@@ -83,10 +88,10 @@ export function registersPanel(): HTMLElement {
     inp.addEventListener('blur', () => done(true));
   }
 
-  effect(() => { session.tick.track(); render(); });
+  effect(() => { session.tick.track(); showAll.value; render(); });
   prev.set(m.x);
 
   return h('section', { class: 'panel regs-panel' },
-    h('div', { class: 'panel-head' }, 'Registers', h('span', { class: 'spacer' }), fmtSel),
+    h('div', { class: 'panel-head' }, 'Registers', h('span', { class: 'spacer' }), allBtn, fmtSel),
     h('div', { class: 'panel-body regs' }, pcRow, cells.map(c => c.row)));
 }

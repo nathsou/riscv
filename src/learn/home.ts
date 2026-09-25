@@ -36,7 +36,8 @@ function heroCpu(): HTMLElement {
   const ren = new Renderer(canvas, eng.cpu, {
     machine: m,
     time: () => { const e = performance.now() - t0; return e >= DUR ? Infinity : (e / DUR) * tmax; },
-    showValues: () => true,
+    showValues: () => false,
+    compact: true,
   });
   let raf = 0, last = 0, visible = true;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;

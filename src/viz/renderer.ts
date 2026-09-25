@@ -48,6 +48,8 @@ export interface RendererEnv {
   time(): number;
   /** Seconds since the last clock edge (for pulses). */
   showValues(): boolean;
+  /** Reduce detail for small, decorative diagrams. */
+  compact?: boolean;
 }
 
 export class Renderer {
@@ -261,7 +263,7 @@ export class Renderer {
 
   private text(str: string, x: number, y: number, worldSize: number, color: string, align: CanvasTextAlign = 'center', mono = false, weight = 500): boolean {
     const px = worldSize * this.cam.k;
-    if (px < 5) return false;
+    if (px < (this.env.compact ? 11 : 8)) return false;
     const { ctx } = this;
     ctx.font = `${weight} ${worldSize}px ${mono ? this.th.mono : this.th.font}`;
     ctx.fillStyle = color;
@@ -315,7 +317,10 @@ export class Renderer {
     const lines = title.length > 10 && words.length > 1 && r.h > r.w * 0.5
       ? [words.slice(0, Math.ceil(words.length / 2)).join(' '), words.slice(Math.ceil(words.length / 2)).join(' ')] : [title];
     const longest = Math.max(...lines.map(x => x.length));
-    const tsize = Math.min(r.h * 0.2, r.w / Math.max(4, longest) * 1.5, 18);
+    const baseSize = Math.min(r.h * 0.2, r.w / Math.max(4, longest) * 1.5, 18);
+    // Keep the names of major blocks legible in a docked or mobile overview.
+    const readable = sr.w >= longest * 5.4 + 8 && sr.h >= 22;
+    const tsize = readable ? Math.max(baseSize, 9.5 / this.cam.k) : baseSize;
     const cy = r.y + r.h / 2;
     const l = def.label?.(inst);
     const ty = (l ? cy - tsize * 0.45 : cy) - (lines.length - 1) * tsize * 0.55;
@@ -463,7 +468,7 @@ export class Renderer {
     }
     // tunnel labels
     const tfs = Math.min(12, 10 / sc);
-    if (tunnel && sc * tfs > 5) {
+    if (tunnel && !this.env.compact && sc * tfs > 8) {
       ctx.font = `600 ${tfs}px ${th.mono}`;
       ctx.fillStyle = alpha(th.ctrl, live ? 1 : 0.45);
       ctx.textBaseline = 'middle';

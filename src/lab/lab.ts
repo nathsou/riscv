@@ -3,7 +3,7 @@ import { h } from '../ui/h.ts';
 import { effect, signal, listen } from '../ui/reactive.ts';
 import { icon } from '../ui/icons.ts';
 import { route, navigate } from '../ui/router.ts';
-import { session, setSource, toggleBreakpoint, backupSource, previousSource } from '../app/session.ts';
+import { session, setSource, setMode, toggleBreakpoint, previousSource, restorePreviousSource } from '../app/session.ts';
 import { EXAMPLES } from '../content/examples.ts';
 import { createEditor } from '../editor/editor.ts';
 import type { EditorHandle } from '../editor/editor.ts';
@@ -18,17 +18,20 @@ import { screenPanel } from './screen.ts';
 import { csrPanel } from './csrs.ts';
 import { statsPanel } from './stats.ts';
 import { problemsPanel } from './problems.ts';
+import { tracePanel } from './trace.ts';
 import { hoverFor, hintFor } from './hover.ts';
 import { controls, statusPill } from './toolbar.ts';
 import { MMIO_BASE, FB_BASE } from '../sim/memmap.ts';
 
-type Tab = 'console' | 'memory' | 'screen' | 'csr' | 'stats' | 'problems';
+type Tab = 'trace' | 'console' | 'memory' | 'screen' | 'csr' | 'stats' | 'problems';
 
 export function mount(el: HTMLElement): void {
   const m = session.machine;
-  const showListing = signal<boolean>(loadJSON('listing', true));
+  const compact = matchMedia('(max-width: 1800px)').matches;
+  const listingKey = compact ? 'listing-compact' : 'listing';
+  const showListing = signal<boolean>(loadJSON(listingKey, !compact));
   const showDatapath = signal<boolean>(loadJSON('lab-datapath', true));
-  showListing.subscribe(v => saveJSON('listing', v));
+  showListing.subscribe(v => saveJSON(listingKey, v));
   showDatapath.subscribe(v => saveJSON('lab-datapath', v));
 
   // import shared program from URL
@@ -93,16 +96,12 @@ export function mount(el: HTMLElement): void {
     const v = exampleSel.value;
     exampleSel.value = '';
     if (v === '__prev') {
-      const prev = previousSource();
-      if (!prev) return;
-      backupSource();
-      setSource(prev);
+      if (!restorePreviousSource()) return;
       toast('Restored your previous program');
       return;
     }
     const ex = EXAMPLES.find(e => e.id === v);
     if (!ex) return;
-    backupSource();
     setSource(ex.source, ex.id);
     toast(`Loaded “${ex.title}”`);
   });
@@ -125,11 +124,11 @@ export function mount(el: HTMLElement): void {
     h('div', { class: 'panel-body ed-host' }, editor.el));
 
   // ------------------------------------------------------------ inspector tabs
-  const tab = signal<Tab>(loadJSON('lab-tab', 'console'));
+  const tab = signal<Tab>(loadJSON('lab-tab', 'trace'));
   tab.subscribe(t => saveJSON('lab-tab', t));
-  const tabDefs: [Tab, string][] = [['console', 'Console'], ['screen', 'Screen'], ['memory', 'Memory'], ['csr', 'CSRs'], ['stats', 'Stats'], ['problems', 'Problems']];
+  const tabDefs: [Tab, string][] = [['trace', 'Step'], ['console', 'Console'], ['screen', 'Screen'], ['memory', 'Memory'], ['csr', 'CSRs'], ['stats', 'Stats'], ['problems', 'Problems']];
   const bodies: Record<Tab, HTMLElement> = {
-    console: consolePanel(), memory: memoryPanel(), screen: screenPanel(), csr: csrPanel(), stats: statsPanel(), problems: problemsPanel(() => editor),
+    trace: tracePanel(), console: consolePanel(), memory: memoryPanel(), screen: screenPanel(), csr: csrPanel(), stats: statsPanel(), problems: problemsPanel(() => editor),
   };
   const tabBtns = tabDefs.map(([t, l]) => {
     const b = h('button', { role: 'tab' }, l);
@@ -214,7 +213,7 @@ export function mount(el: HTMLElement): void {
   const mview = signal<'code' | 'cpu' | 'state'>('code');
   const mtabs = h('div', { class: 'mobile-tabs tabs' }, ...(['code', 'cpu', 'state'] as const).map(k => {
     const b = h('button', null, k === 'code' ? 'Code' : k === 'cpu' ? 'Datapath' : 'State');
-    b.addEventListener('click', () => { mview.value = k; if (k === 'cpu') showDatapath.value = true; });
+    b.addEventListener('click', () => { mview.value = k; if (k === 'cpu') { showDatapath.value = true; if (session.mode.peek() === 'isa') setMode('single'); } });
     effect(() => b.classList.toggle('on', mview.value === k));
     return b;
   }));

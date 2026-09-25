@@ -53,14 +53,27 @@ export interface Session {
   breakpoints: ReturnType<typeof signal<Set<number>>>;
   stale: ReturnType<typeof signal<boolean>>;
   exampleId: ReturnType<typeof signal<string>>;
+  programId: string;
 }
 
 const DEFAULT_EXAMPLE = 'hello';
+const initialSource = load('source') ?? EXAMPLES.find(e => e.id === DEFAULT_EXAMPLE)!.source;
+const initialExample = load('example') ?? DEFAULT_EXAMPLE;
+function idFor(src: string, exampleId = ''): string {
+  if (exampleId && EXAMPLES.some(e => e.id === exampleId && e.source === src)) return `example:${exampleId}`;
+  let hash = 2166136261;
+  for (let i = 0; i < src.length; i++) hash = Math.imul(hash ^ src.charCodeAt(i), 16777619);
+  return `source:${(hash >>> 0).toString(16)}`;
+}
+type PreviousProgram = { source: string; exampleId: string; programId: string };
+const breakpointSets = loadJSON<Record<string, number[]>>('breakpoints-by-program', {});
+const initialProgramId = load('program-id') ?? idFor(initialSource, initialExample);
+if (!(initialProgramId in breakpointSets)) breakpointSets[initialProgramId] = loadJSON<number[]>('breakpoints', []);
 
 const machine = new Machine();
 
 export const session: Session = {
-  source: signal(load('source') ?? EXAMPLES.find(e => e.id === DEFAULT_EXAMPLE)!.source),
+  source: signal(initialSource),
   asm: signal<AsmResult | null>(null),
   loaded: signal<AsmResult | null>(null),
   machine,
@@ -69,9 +82,10 @@ export const session: Session = {
   tick: trigger(),
   running: signal(false),
   speed: signal(loadJSON('speed', 8)),
-  breakpoints: signal(new Set<number>(loadJSON<number[]>('breakpoints', []))),
+  breakpoints: signal(new Set<number>(breakpointSets[initialProgramId])),
   stale: signal(false),
-  exampleId: signal(load('example') ?? DEFAULT_EXAMPLE),
+  exampleId: signal(initialExample),
+  programId: initialProgramId,
 };
 
 const engineFactories = new Map<EngineKind, (m: Machine) => Engine>();
@@ -159,13 +173,31 @@ export function reset(): void {
 /** Keep a copy of the current program so it can be restored after loading another. */
 export function backupSource(): void {
   const cur = session.source.peek();
-  const isExample = EXAMPLES.some(e => e.source === cur);
-  if (!isExample && cur.trim()) save('source-prev', cur);
+  if (!cur.trim()) return;
+  const previous: PreviousProgram = { source: cur, exampleId: session.exampleId.peek(), programId: session.programId };
+  saveJSON('program-prev', previous);
+  save('source-prev', cur);
 }
 
-export function previousSource(): string | null { return load('source-prev'); }
+export function previousSource(): string | null { return loadJSON<PreviousProgram | null>('program-prev', null)?.source ?? load('source-prev'); }
 
-export function setSource(src: string, exampleId = ''): void {
+export function restorePreviousSource(): boolean {
+  const prev = loadJSON<PreviousProgram | null>('program-prev', null);
+  if (prev) { setSource(prev.source, prev.exampleId, prev.programId); return true; }
+  const legacy = load('source-prev');
+  if (legacy) { setSource(legacy); return true; }
+  return false;
+}
+
+export function setSource(src: string, exampleId = '', programId = idFor(src, exampleId)): void {
+  const changed = src !== session.source.peek() || programId !== session.programId;
+  if (changed) {
+    backupSource();
+    breakpointSets[session.programId] = [...session.breakpoints.peek()];
+    session.programId = programId;
+    save('program-id', programId);
+    session.breakpoints.value = new Set(breakpointSets[programId] ?? []);
+  }
   session.source.value = src;
   session.exampleId.value = exampleId;
   save('example', exampleId);
@@ -176,7 +208,10 @@ export function setSource(src: string, exampleId = ''): void {
 }
 
 // ------------------------------------------------------------- breakpoints
-session.breakpoints.subscribe(b => saveJSON('breakpoints', [...b]));
+session.breakpoints.subscribe(b => {
+  breakpointSets[session.programId] = [...b];
+  saveJSON('breakpoints-by-program', breakpointSets);
+});
 session.speed.subscribe(s => saveJSON('speed', s));
 
 export function toggleBreakpoint(line: number): void {

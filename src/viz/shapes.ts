@@ -8,7 +8,7 @@ export function shapePath(ctx: CanvasRenderingContext2D, node: Node): void {
   ctx.beginPath();
   switch (shape) {
     case 'and': case 'nand': {
-      const bw = shape === 'nand' ? w - br * 2.2 : w;
+      const bw = shape === 'nand' ? w - br * 2 : w;
       const r = h / 2;
       ctx.moveTo(x, y);
       ctx.lineTo(x + bw - r, y);
@@ -19,7 +19,7 @@ export function shapePath(ctx: CanvasRenderingContext2D, node: Node): void {
       break;
     }
     case 'or': case 'nor': case 'xor': case 'xnor': {
-      const bw = shape === 'nor' || shape === 'xnor' ? w - br * 2.2 : w;
+      const bw = shape === 'nor' || shape === 'xnor' ? w - br * 2 : w;
       const off = shape === 'xor' || shape === 'xnor' ? w * 0.12 : 0;
       const x0 = x + off;
       ctx.moveTo(x0, y);
@@ -35,7 +35,7 @@ export function shapePath(ctx: CanvasRenderingContext2D, node: Node): void {
       break;
     }
     case 'not': case 'buf': {
-      const bw = shape === 'not' ? w - br * 2.2 : w;
+      const bw = shape === 'not' ? w - br * 2 : w;
       ctx.moveTo(x, y);
       ctx.lineTo(x + bw, y + h / 2);
       ctx.lineTo(x, y + h);

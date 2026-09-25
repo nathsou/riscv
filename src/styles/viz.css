@@ -14,6 +14,9 @@
 .dp-crumbs .crumb:hover { color: var(--text); background: var(--panel-2); }
 .dp-crumbs .crumb.on { color: var(--data); }
 .dp-crumbs .sep { color: var(--text-faint); opacity: 0.6; }
+.dp-overview { flex: none; }
+.dp-focus-name { display: none; color: var(--data); font-size: 12px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dp-netkey { padding: 2px 6px; border: 1px dashed var(--ctrl); border-radius: 4px; color: var(--ctrl); }
 
 .dp-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .dp-stage { position: relative; flex: 1; min-height: 120px; overflow: hidden; background: var(--bg); }
@@ -73,7 +76,7 @@
 .ctl-table td { padding: 3px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .ctl-table td:first-child { font-family: var(--mono); color: var(--ctrl); white-space: nowrap; }
 .ctl-table td.v { font-family: var(--mono); color: var(--text); text-align: right; white-space: nowrap; }
-.ctl-table tr.off td { opacity: 0.45; }
+.ctl-table tr.off td { opacity: 0.7; }
 .ctl-table td.m { color: var(--text-dim); }
 .dpv-sel h4 { margin: 0 0 6px; font-size: 14px; }
 .dpv-sel p { margin: 0; font-size: 13px; color: var(--text-dim); line-height: 1.5; }
@@ -90,6 +93,7 @@
 .dp-ticks.compact .dp-tick:not(.on) { visibility: hidden; }
 @container (max-width: 560px) {
   .dp-crumbs { display: none; }
+  .dp-focus-name { display: inline; }
   .dp-head .btn.toggle { padding: 0 6px; }
   .dp-head > span:first-of-type { display: none; }
   .dp-legend .faint { display: none; }
@@ -98,6 +102,8 @@
 /* ---------- pipeline ---------- */
 .dp-pipe { flex: 1; min-height: 0; overflow: auto; background: var(--bg); }
 .pipe-view { padding: 10px 12px 16px; display: flex; flex-direction: column; gap: 8px; min-width: 560px; }
+.pipe-view::before { content: 'Scroll sideways to see all five stages →'; display: none; color: var(--text-dim); font-size: 12px; }
+@container (max-width: 620px) { .pipe-view::before { display: block; } }
 .ps-heads { display: grid; grid-template-columns: 190fr 190fr 206fr 170fr 172fr; gap: 0; padding: 0 1.2%; }
 .ps-head {
   display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; margin: 0 4px; border-radius: 8px; min-width: 0;

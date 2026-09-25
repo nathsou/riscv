@@ -85,8 +85,9 @@ export function mountDatapathPanel(el: HTMLElement, opts: { docked?: boolean }):
   showValues.subscribe(v => saveJSON('dp-values', v));
   animate.subscribe(v => saveJSON('dp-animate', v));
 
-  // Visualising needs a hardware engine.
-  if (session.mode.peek() === 'isa') setMode('single');
+  // A visible datapath opens in hardware mode. A dock hidden behind mobile
+  // tabs must leave the user's execution model alone until they open it.
+  if (session.mode.peek() === 'isa' && (!docked || matchMedia('(min-width: 1101px)').matches)) setMode('single');
   let engine = session.engine instanceof SingleCycleEngine ? session.engine : null;
 
   // ---------------------------------------------------------------- DOM
@@ -95,6 +96,8 @@ export function mountDatapathPanel(el: HTMLElement, opts: { docked?: boolean }):
   const overlay = h('div', { class: 'dp-overlay hidden' });
   stage.append(overlay);
   const crumbs = h('nav', { class: 'dp-crumbs', 'aria-label': 'Abstraction path' });
+  const overview = h('button', { class: 'btn small ghost dp-overview', title: 'Return to the whole CPU' }, '← CPU');
+  const focusName = h('span', { class: 'dp-focus-name' }, 'CPU');
   const slider = h('input', { type: 'range', class: 'dp-slider', min: '0', max: '1', step: '0.001', value: '1', 'aria-label': 'Abstraction level' });
   const sliderTicks = h('div', { class: 'dp-ticks' });
   const sliderWrap = h('div', { class: 'dp-abstraction' },
@@ -115,11 +118,13 @@ export function mountDatapathPanel(el: HTMLElement, opts: { docked?: boolean }):
     zoomOut, zoomIn, fitBtn];
   const title = h('span', null, 'Datapath');
   const head = h('div', { class: 'panel-head dp-head' },
-    icon('cpu'), title, crumbs, h('span', { class: 'spacer' }), ...hwTools);
+    icon('cpu'), title, overview, focusName, crumbs, h('span', { class: 'spacer' }), ...hwTools);
   const wave = h('div', { class: 'dp-wave hidden' });
   const legend = h('div', { class: 'dp-legend' },
     h('span', { class: 'lg data' }, 'data'), h('span', { class: 'lg ctrl' }, 'control'), h('span', { class: 'lg addr' }, 'address'),
-    h('span', { class: 'lg zero' }, '0'), h('span', { class: 'faint' }, docked ? 'scroll zoom · drag pan · dbl-click dive · shift-click pin' : 'Scroll to zoom · drag to pan · double-click a block to dive in · shift-click a wire to pin it to the waveform'));
+    h('span', { class: 'lg zero' }, '0'),
+    h('span', { class: 'dp-netkey', title: 'Short wires with the same label inside this block represent one connected signal' }, 'Matching labels connect within a block'),
+    h('span', { class: 'faint' }, docked ? 'scroll zoom · drag pan · dbl-click dive · shift-click pin' : 'Scroll to zoom · drag to pan · double-click a block to dive in · shift-click a wire to pin it to the waveform'));
   const bottom = h('div', { class: 'dp-bottom' }, sliderWrap, legend);
   const pipeHost = h('div', { class: 'dp-pipe hidden' });
   const body = h('div', { class: 'dp-body' }, stage, pipeHost, bottom, wave);
@@ -187,6 +192,8 @@ export function mountDatapathPanel(el: HTMLElement, opts: { docked?: boolean }):
 
   function renderCrumbs(): void {
     const cur = Math.round(pos);
+    focusName.textContent = levels[cur]?.label ?? 'CPU';
+    overview.classList.toggle('hidden', cur <= 1);
     crumbs.replaceChildren(...levels.slice(0, cur + 1).flatMap((l, i) => {
       const a = h('button', { class: 'crumb' + (i === cur ? ' on' : '') }, l.label);
       a.addEventListener('click', () => flyTo(i));
@@ -210,6 +217,7 @@ export function mountDatapathPanel(el: HTMLElement, opts: { docked?: boolean }):
     camAnim = { from: { ...renderer.cam }, to, t0: now(), dur, pos0: pos, pos1: i };
     dirty = true;
   }
+  overview.addEventListener('click', () => flyTo(1));
 
   function focusOn(inst: Instance): void {
     if (!cpu) return;
@@ -246,7 +254,7 @@ export function mountDatapathPanel(el: HTMLElement, opts: { docked?: boolean }):
   let pipeVersion = -1;
   function attach(): void {
     pipe = session.engine instanceof PipelineEngine ? session.engine : null;
-    for (const e of [stage, bottom, crumbs, ...hwTools]) e.classList.toggle('hidden', !!pipe);
+    for (const e of [stage, bottom, crumbs, overview, focusName, ...hwTools]) e.classList.toggle('hidden', !!pipe);
     pipeHost.classList.toggle('hidden', !pipe);
     title.textContent = pipe ? '5-stage pipeline' : 'Datapath';
     if (pipe) {
@@ -269,11 +277,11 @@ export function mountDatapathPanel(el: HTMLElement, opts: { docked?: boolean }):
     renderer = new Renderer(canvas, cpu, env);
     const r = stage.getBoundingClientRect();
     renderer.resize(Math.max(50, r.width), Math.max(50, r.height));
-    const start = loadJSON<string>('dp-focus', '');
+    const start = docked ? '' : loadJSON<string>('dp-focus', '');
     let f: Instance = cpu;
     if (start) for (const part of start.split('/').slice(1)) { const c = f.child(part); if (!c) break; f = c; }
     buildLevels(f);
-    const p = loadJSON<number>('dp-pos', 1);
+    const p = docked ? 1 : loadJSON<number>('dp-pos', 1);
     setPos(Math.min(p, levels.length - 1));
     lastVersion = -1;
     dirty = true;

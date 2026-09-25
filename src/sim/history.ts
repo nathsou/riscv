@@ -34,6 +34,14 @@ export class History {
 
   get length(): number { return this.seq - this.oldest; }
 
+  /** Architectural changes recorded by the most recent step, for the UI. */
+  latest(): { pc: number; reg: number; regOld: number; memAddr: number; memOld: number; memW: number } | null {
+    if (this.seq === this.oldest) return null;
+    const i = (this.seq - 1) % this.cap;
+    return { pc: this.pc[i] >>> 0, reg: this.reg[i], regOld: this.regOld[i],
+      memAddr: this.memAddr[i] >>> 0, memOld: this.memOld[i], memW: this.memW[i] };
+  }
+
   begin(pc: number, instret: number, cycles: number): void {
     if (!this.enabled) return;
     const i = this.seq % this.cap;
@@ -97,4 +105,3 @@ export class History {
     this.extra.clear();
   }
 }
-

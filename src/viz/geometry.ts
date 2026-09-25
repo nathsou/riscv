@@ -34,7 +34,15 @@ export function portPos(node: Node, dir: 'in' | 'out', idx: number): PortGeom {
   if (isGate(shape) && dir === 'in') t = same.length === 1 ? 0.5 : 0.18 + 0.64 * (k / (same.length - 1));
   if (shape === 'mux' && dir === 'in' && side === 'l') t = 0.15 + 0.7 * ((k + 0.5) / same.length);
   switch (side) {
-    case 'l': return { x: node.x, y: node.y + node.h * t, side };
+    case 'l': {
+      // OR/XOR inputs meet the curved back of the symbol, not its bounding box.
+      // The outer quadratic has control point at 1/4 of the symbol width.
+      const curved = shape === 'or' || shape === 'nor' || shape === 'xor' || shape === 'xnor';
+      const bubble = shape === 'nor' || shape === 'xnor';
+      const bw = bubble ? node.w - Math.min(node.w, node.h) * 0.18 : node.w;
+      const offset = shape === 'xor' || shape === 'xnor' ? node.w * 0.12 : 0;
+      return { x: node.x + (curved ? offset + bw * 0.5 * t * (1 - t) : 0), y: node.y + node.h * t, side };
+    }
     case 'r': return { x: node.x + node.w, y: node.y + node.h * t, side };
     case 't': return { x: node.x + node.w * t, y: node.y + (shape === 'mux' ? node.h * 0.12 * (1 - 2 * Math.abs(t - 0.5)) : 0), side };
     case 'b': return { x: node.x + node.w * t, y: node.y + node.h - (shape === 'mux' ? node.h * 0.12 : 0), side };

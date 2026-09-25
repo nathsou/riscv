@@ -16,6 +16,7 @@ import { PipelineEngine, STAGES } from '../hw/cpu/pipeline.ts';
 import { CONTROL_FIELDS, IMMSEL_NAMES, ASEL_NAMES, BRTYPE_NAMES, WBSEL_NAMES, SYS_NAMES } from '../hw/lib/control.ts';
 import { ALU_OP_NAMES } from '../hw/lib/alu.ts';
 import { fmtVal } from './renderer.ts';
+import { tracePanel } from '../lab/trace.ts';
 
 const DECODE: Record<string, (v: number) => string> = {
   immSel: v => IMMSEL_NAMES[v] ?? '?',
@@ -36,6 +37,7 @@ export function mount(el: HTMLElement): void {
   const cons = h('div', { class: 'panel-body dpv-console' });
   const side = h('aside', { class: 'dpv-side' },
     h('section', { class: 'panel' }, h('div', { class: 'panel-head' }, icon('code'), 'Current instruction'), insn),
+    h('section', { class: 'panel' }, h('div', { class: 'panel-head' }, icon('list'), 'Last step'), tracePanel()),
     h('section', { class: 'panel' }, h('div', { class: 'panel-head' }, icon('chip'), 'Control word'), ctl),
     h('section', { class: 'panel' }, h('div', { class: 'panel-head' }, icon('layers'), 'Selected block'), sel),
     h('section', { class: 'panel' }, h('div', { class: 'panel-head' }, icon('list'), 'Console'), cons));
