@@ -12,6 +12,7 @@ import { bitfield } from '../ui/components/bitfield.ts';
 import { findSpec } from '../isa/decode.ts';
 import { disassemble } from '../asm/disasm.ts';
 import { SingleCycleEngine } from '../hw/cpu/single.ts';
+import { PipelineEngine, STAGES } from '../hw/cpu/pipeline.ts';
 import { CONTROL_FIELDS, IMMSEL_NAMES, ASEL_NAMES, BRTYPE_NAMES, WBSEL_NAMES, SYS_NAMES } from '../hw/lib/control.ts';
 import { ALU_OP_NAMES } from '../hw/lib/alu.ts';
 import { fmtVal } from './renderer.ts';
@@ -61,7 +62,17 @@ export function mount(el: HTMLElement): void {
       spec ? bitfield(spec, { word, compact: true }) : h('p', null, 'Not a valid instruction: the control unit raises illegal.'),
       spec ? h('p', null, spec.summary) : null,
       m.status === 'halted' ? h('p', null, `Program exited with code ${m.exitCode}.`) : m.status === 'error' ? h('p', null, m.message) : null);
-    if (!eng) { ctl.replaceChildren(h('p', { class: 'faint' }, 'Switch to a hardware mode to see control signals.')); return; }
+    if (session.engine instanceof PipelineEngine) {
+      const pe = session.engine;
+      set(ctl, h('table', { class: 'ctl-table' }, h('tbody', null, ...STAGES.map((st, i) => {
+        const sl = pe.state.stages[i];
+        return h('tr', { class: sl && !sl.flushed ? '' : 'off' }, h('td', null, st), h('td', { class: 'm mono' }, sl ? sl.text + (sl.flushed ? '  (flushed)' : '') : 'bubble'));
+      }))), h('p', { class: 'dim small' }, 'Each instruction takes five cycles, but a new one starts every cycle. Forwarding feeds results straight back to EX; a load followed by a use of its result costs one stall cycle, and a taken branch flushes the two instructions fetched behind it.'));
+      cons.textContent = m.consoleOut.slice(-2000) || '(no output yet)';
+      renderSel();
+      return;
+    }
+    if (!eng) { set(ctl, h('p', { class: 'faint' }, 'Switch to a hardware mode to see control signals.')); return; }
     const s = eng.structure;
     const rows = CONTROL_FIELDS.map(f => {
       const v = s.net(f.name)?.value ?? 0;

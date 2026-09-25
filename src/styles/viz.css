@@ -94,3 +94,68 @@
   .dp-head > span:first-of-type { display: none; }
   .dp-legend .faint { display: none; }
 }
+
+/* ---------- pipeline ---------- */
+.dp-pipe { flex: 1; min-height: 0; overflow: auto; background: var(--bg); }
+.pipe-view { padding: 10px 12px 16px; display: flex; flex-direction: column; gap: 8px; min-width: 560px; }
+.ps-heads { display: grid; grid-template-columns: 190fr 190fr 206fr 170fr 172fr; gap: 0; padding: 0 1.2%; }
+.ps-head {
+  display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; margin: 0 4px; border-radius: 8px; min-width: 0;
+  background: hsl(var(--ih, 200) 70% 55% / 0.14); border: 1px solid hsl(var(--ih, 200) 70% 55% / 0.5);
+}
+.ps-head.bubble { background: transparent; border-style: dashed; border-color: var(--line-2); }
+.ps-head.flushed { background: color-mix(in srgb, var(--err) 10%, transparent); border-color: color-mix(in srgb, var(--err) 50%, transparent); }
+.ps-head.flushed .ps-insn { text-decoration: line-through; color: var(--text-faint); }
+.ps-name { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--text-faint); }
+.ps-insn { font-family: var(--mono); font-size: 12.5px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ps-head.bubble .ps-insn { color: var(--text-faint); font-style: italic; }
+.ps-tag { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; min-height: 13px; }
+.ps-tag.stall { color: var(--warn); }
+.ps-tag.flushed, .ps-tag.trap { color: var(--err); }
+.ps-tag.taken { color: var(--addr); }
+
+.pipe-svg { width: 100%; height: auto; display: block; }
+.pipe-svg .cols rect { fill: var(--panel); stroke: var(--line); }
+.pipe-svg .cols rect.flush { fill: color-mix(in srgb, var(--err) 6%, var(--panel)); stroke: color-mix(in srgb, var(--err) 40%, transparent); }
+.pipe-svg .wires path { fill: none; stroke: var(--data); stroke-width: 2; opacity: 0.55; stroke-linejoin: round; }
+.pipe-svg .wires path.ctl { stroke: var(--ctrl); stroke-width: 1.4; }
+.pipe-svg .wires path.wb { stroke: var(--data); opacity: 0.25; }
+.pipe-svg .wires path.fwd { stroke: var(--pink); opacity: 0.18; stroke-dasharray: 5 4; }
+.pipe-svg .wires path.redirect { stroke: var(--addr); opacity: 0.18; stroke-dasharray: 5 4; }
+.pipe-svg .wires path.haz { stroke: var(--warn); opacity: 0.15; stroke-width: 1.4; stroke-dasharray: 3 3; }
+.pipe-svg .wires path.on { opacity: 1; stroke-width: 3; stroke-dasharray: none; filter: drop-shadow(0 0 4px currentColor); }
+.pipe-svg .wires path.fwd.on { color: var(--pink); }
+.pipe-svg .wires path.redirect.on { color: var(--addr); }
+.pipe-svg .wires path.haz.on { color: var(--warn); stroke-width: 2; }
+.pipe-svg .blocks rect, .pipe-svg .blocks path { fill: var(--bg-2); stroke: var(--line-3); stroke-width: 1.2; transition: fill 0.2s; }
+.pipe-svg .blocks .busy { fill: hsl(var(--ih) 70% 55% / 0.16); stroke: hsl(var(--ih) 70% 55% / 0.8); }
+.pipe-svg .blocks .sel { stroke: var(--pink); stroke-width: 2; }
+.pipe-svg .blocks .hazbox { stroke-dasharray: 3 2; }
+.pipe-svg .blocks .hazbox.on { fill: color-mix(in srgb, var(--warn) 22%, var(--bg-2)); stroke: var(--warn); stroke-dasharray: none; }
+.pipe-svg text { font: 600 11px var(--font); fill: var(--text); text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
+.pipe-svg text.sm { font-size: 9.5px; fill: var(--text-dim); font-family: var(--mono); }
+.pipe-svg .pregs rect { fill: var(--line-2); stroke: none; }
+.pipe-svg .pregs rect.busy { fill: hsl(var(--ih) 70% 55% / 0.65); }
+.pipe-svg .pregs .rl { font-size: 9.5px; fill: var(--text-faint); font-family: var(--mono); }
+.pipe-svg .vals text { font: 600 10.5px var(--mono); fill: var(--data); }
+.pipe-svg .vals text.l { text-anchor: start; }
+.pipe-svg #v-fwdmem, .pipe-svg #v-fwdwb { fill: var(--pink); }
+.pipe-svg #v-redirect { fill: var(--addr); }
+.pipe-svg #v-haz { fill: var(--warn); }
+.pipe-svg .arrow { fill: var(--data); }
+
+.pipe-lower { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 12px; align-items: start; }
+.pipe-chart-wrap h4 { margin: 4px 0 6px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+.pipe-chart { display: flex; flex-direction: column; gap: 2px; overflow-x: auto; }
+.pc-row { display: grid; grid-template-columns: 150px repeat(var(--cols, 16), minmax(28px, 1fr)); gap: 2px; }
+.pc-row.head .pc-cell { font-size: 9.5px; color: var(--text-faint); background: none; }
+.pc-name { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: hsl(var(--ih) 65% 60%); padding-right: 6px; line-height: 20px; }
+.pc-cell { height: 20px; display: grid; place-items: center; font: 600 10px var(--mono); border-radius: 4px; color: var(--text); }
+.pc-cell.st { background: hsl(var(--ih) 70% 55% / 0.28); }
+.pc-cell.stl { background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--warn) 28%, transparent) 0 4px, transparent 4px 8px); color: var(--warn); }
+.pc-cell.fl { background: color-mix(in srgb, var(--err) 18%, transparent); color: var(--err); text-decoration: line-through; }
+.pc-row:last-child .pc-cell.st { outline: 1px solid hsl(var(--ih) 70% 55% / 0.6); }
+.pipe-stats { display: flex; flex-direction: column; gap: 6px; }
+.pipe-stats .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+.pipe-stats .tv { font: 650 16px var(--mono); color: var(--text); }
+.pipe-stats .tl { font-size: 11px; color: var(--text-faint); }

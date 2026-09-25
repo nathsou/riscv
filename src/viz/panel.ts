@@ -12,6 +12,9 @@ import { showTip, hideTip } from '../ui/components/tooltip.ts';
 import { session, setMode } from '../app/session.ts';
 import { loadJSON, saveJSON } from '../app/storage.ts';
 import { SingleCycleEngine } from '../hw/cpu/single.ts';
+import { PipelineEngine } from '../hw/cpu/pipeline.ts';
+import { pipelineView } from './pipeline-view.ts';
+import type { PipelineView } from './pipeline-view.ts';
 import type { Instance, Net } from '../hw/netlist.ts';
 import { clearDelayCache } from '../hw/netlist.ts';
 import { ADDER_CHOICE } from '../hw/lib/blocks.ts';
@@ -81,7 +84,7 @@ export function mountDatapathPanel(el: HTMLElement, opts: { docked?: boolean }):
   animate.subscribe(v => saveJSON('dp-animate', v));
 
   // Visualising needs a hardware engine.
-  if (!(session.engine instanceof SingleCycleEngine)) setMode('single');
+  if (session.mode.peek() === 'isa') setMode('single');
   let engine = session.engine instanceof SingleCycleEngine ? session.engine : null;
 
   // ---------------------------------------------------------------- DOM
@@ -103,17 +106,21 @@ export function mountDatapathPanel(el: HTMLElement, opts: { docked?: boolean }):
   const fitBtn = h('button', { class: 'iconbtn', title: 'Fit (0)', 'aria-label': 'Fit view' }, icon('fit'));
   const zoomIn = h('button', { class: 'iconbtn', title: 'Deeper (+)', 'aria-label': 'Zoom in one level' }, icon('zoomIn'));
   const zoomOut = h('button', { class: 'iconbtn', title: 'Higher (−)', 'aria-label': 'Zoom out one level' }, icon('zoomOut'));
-  const head = h('div', { class: 'panel-head dp-head' },
-    icon('cpu'), h('span', null, 'Datapath'), crumbs, h('span', { class: 'spacer' }),
+  const hwTools = [
     toggle('Values', 'Show bus values', showValues),
     toggle('Wavefront', 'Animate signal propagation after each clock edge', animate),
     toggle('CLA', 'Use a carry-lookahead adder instead of ripple-carry (faster, more gates)', cla),
-    zoomOut, zoomIn, fitBtn);
+    zoomOut, zoomIn, fitBtn];
+  const title = h('span', null, 'Datapath');
+  const head = h('div', { class: 'panel-head dp-head' },
+    icon('cpu'), title, crumbs, h('span', { class: 'spacer' }), ...hwTools);
   const wave = h('div', { class: 'dp-wave hidden' });
   const legend = h('div', { class: 'dp-legend' },
     h('span', { class: 'lg data' }, 'data'), h('span', { class: 'lg ctrl' }, 'control'), h('span', { class: 'lg addr' }, 'address'),
     h('span', { class: 'lg zero' }, '0'), h('span', { class: 'faint' }, docked ? 'scroll zoom · drag pan · dbl-click dive · shift-click pin' : 'Scroll to zoom · drag to pan · double-click a block to dive in · shift-click a wire to pin it to the waveform'));
-  const body = h('div', { class: 'dp-body' }, stage, h('div', { class: 'dp-bottom' }, sliderWrap, legend), wave);
+  const bottom = h('div', { class: 'dp-bottom' }, sliderWrap, legend);
+  const pipeHost = h('div', { class: 'dp-pipe hidden' });
+  const body = h('div', { class: 'dp-body' }, stage, pipeHost, bottom, wave);
   el.classList.add('dp-root');
   el.append(head, body);
 
@@ -232,7 +239,20 @@ export function mountDatapathPanel(el: HTMLElement, opts: { docked?: boolean }):
     setPos(p, false);
   }
 
+  let pipe: PipelineEngine | null = null;
+  let pview: PipelineView | null = null;
+  let pipeVersion = -1;
   function attach(): void {
+    pipe = session.engine instanceof PipelineEngine ? session.engine : null;
+    for (const e of [stage, bottom, crumbs, ...hwTools]) e.classList.toggle('hidden', !!pipe);
+    pipeHost.classList.toggle('hidden', !pipe);
+    title.textContent = pipe ? '5-stage pipeline' : 'Datapath';
+    if (pipe) {
+      engine = null;
+      if (!pview) { pview = pipelineView(); pipeHost.append(pview.el); }
+      pipeVersion = -1;
+      return;
+    }
     engine = session.engine instanceof SingleCycleEngine ? session.engine : null;
     overlay.classList.toggle('hidden', !!engine);
     if (!engine) {
@@ -370,6 +390,7 @@ export function mountDatapathPanel(el: HTMLElement, opts: { docked?: boolean }):
   let raf = 0;
   const loop = () => {
     raf = requestAnimationFrame(loop);
+    if (pipe && pview && pipe.version !== pipeVersion && el.isConnected) { pipeVersion = pipe.version; pview.update(pipe); }
     if (!renderer || !engine || !el.isConnected) return;
     if (engine.version !== lastVersion) {
       const first = lastVersion < 0;

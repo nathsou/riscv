@@ -81,6 +81,7 @@ effect(() => {
     viewScope?.dispose();
     clear(view);
     viewScope = new Scope();
+    document.title = 'RISC-V, Gate by Gate';
     withScope(viewScope, () => mod.mount(view));
   });
 });

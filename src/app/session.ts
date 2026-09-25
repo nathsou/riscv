@@ -9,6 +9,7 @@ import { signal, trigger, batch } from '../ui/reactive.ts';
 import { load, save, loadJSON, saveJSON } from './storage.ts';
 import { EXAMPLES } from '../content/examples.ts';
 import { SingleCycleEngine } from '../hw/cpu/single.ts';
+import { PipelineEngine } from '../hw/cpu/pipeline.ts';
 
 export type EngineKind = 'isa' | 'single' | 'pipeline';
 
@@ -76,6 +77,7 @@ export const session: Session = {
 const engineFactories = new Map<EngineKind, (m: Machine) => Engine>();
 engineFactories.set('isa', m => new IsaEngine(m));
 engineFactories.set('single', m => new SingleCycleEngine(m));
+engineFactories.set('pipeline', m => new PipelineEngine(m));
 
 /** Hardware engines register themselves lazily (they live in the hw module). */
 export function registerEngine(kind: EngineKind, f: (m: Machine) => Engine): void {
