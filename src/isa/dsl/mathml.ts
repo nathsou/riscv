@@ -9,17 +9,18 @@ import type { InsnSpec } from '../spec/index.ts';
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const mi = (s: string, cls = '') => `<mi${cls ? ` class="${cls}"` : ''}${s.length > 1 ? ' mathvariant="normal"' : ''}>${esc(s)}</mi>`;
-const mo = (s: string) => `<mo>${esc(s)}</mo>`;
+const FENCES = new Set(['[', ']', '(', ')', '⟨', '⟩']);
+const mo = (s: string) => FENCES.has(s) ? `<mo stretchy="false" lspace="0" rspace="0">${esc(s)}</mo>` : `<mo>${esc(s)}</mo>`;
 const mn = (s: string | number) => `<mn>${esc(String(s))}</mn>`;
 const row = (...xs: string[]) => `<mrow>${xs.join('')}</mrow>`;
 const sub = (a: string, b: string) => `<msub>${a}${b}</msub>`;
 const sup = (a: string, b: string) => `<msup>${a}${b}</msup>`;
 const paren = (x: string) => row(mo('('), x, mo(')'));
-const fn = (name: string, ...args: string[]) => row(mi(name, 'fn'), mo('('), args.join(mo(',')), mo(')'));
+const fn = (name: string, ...args: string[]) => row(mi(name, 'm-fn'), mo('('), args.join(mo(',')), mo(')'));
 const text = (s: string) => `<mtext>${esc(s)}</mtext>`;
 const sp = '<mspace width="0.4em"></mspace>';
 
-export const reg = (r: string) => row(mi('x', 'reg'), mo('['), mi(r, 'field'), mo(']'));
+export const reg = (r: string) => row(mi('x', 'm-reg'), mo('['), mi(r, 'm-field'), mo(']'));
 const mem = (w: number, a: string) => row(sub(mi('M'), mn(w)), mo('['), a, mo(']'));
 
 const PREC: Record<BinOp, number> = {
@@ -48,18 +49,18 @@ function opSym(op: BinOp): string {
     case 'mul': return mo('×');
     case 'div': return subOp('÷', 's');
     case 'divu': return subOp('÷', 'u');
-    case 'rem': return sub(mi('rem', 'fn'), mi('s'));
-    case 'remu': return sub(mi('rem', 'fn'), mi('u'));
+    case 'rem': return sub(mi('rem', 'm-fn'), mi('s'));
+    case 'remu': return sub(mi('rem', 'm-fn'), mi('u'));
     default: return mo('×');
   }
 }
 
 export function immMath(spec: InsnSpec): string {
   switch (spec.format) {
-    case 'U': return row(mi('imm', 'field'), mo('∥'), sup(mn(0), mn(12)));
-    case 'Ish': return mi('shamt', 'field');
-    case 'CSRI': return fn('zext', mi('uimm', 'field'));
-    default: return fn('sext', mi('imm', 'field'));
+    case 'U': return row(mi('imm', 'm-field'), mo('∥'), sup(mn(0), mn(12)));
+    case 'Ish': return mi('shamt', 'm-field');
+    case 'CSRI': return fn('zext', mi('uimm', 'm-field'));
+    default: return fn('sext', mi('imm', 'm-field'));
   }
 }
 
@@ -69,10 +70,10 @@ export function exprMath(e: Expr, spec: InsnSpec, ctx = -1): string {
   switch (e.k) {
     case 'x': return reg(e.r);
     case 'imm': return immMath(spec);
-    case 'shamt': return mi('shamt', 'field');
-    case 'zimm': return fn('zext', mi('uimm', 'field'));
-    case 'pc': return mi('pc', 'reg');
-    case 'csr': return row(mi('CSR', 'reg'), mo('['), mi('csr', 'field'), mo(']'));
+    case 'shamt': return mi('shamt', 'm-field');
+    case 'zimm': return fn('zext', mi('uimm', 'm-field'));
+    case 'pc': return mi('pc', 'm-reg');
+    case 'csr': return row(mi('CSR', 'm-reg'), mo('['), mi('csr', 'm-field'), mo(']'));
     case 'const': return e.v === ~1 ? row(mo('¬'), mn(1)) : mn(e.v);
     case 'not': return row(mo('¬'), exprMath(e.a, spec, 9));
     case 'load': {
@@ -110,7 +111,7 @@ const storeSlice = (w: number) => w === 32 ? '' : row(mo('['), mn(w - 1), mo(':'
 /** One MathML <math> element per line of state updates. */
 export function stateUpdateMath(spec: InsnSpec): string[] {
   const lines: string[] = [];
-  const pcPlus4 = row(mi('pc', 'reg'), mo('+'), mn(4));
+  const pcPlus4 = row(mi('pc', 'm-reg'), mo('+'), mn(4));
   let pcAssigned = false;
   const walk = (stmts: Stmt[], cond?: string) => {
     for (const s of stmts) {
@@ -118,7 +119,7 @@ export function stateUpdateMath(spec: InsnSpec): string[] {
         case 'setX': lines.push(assign(reg('rd'), valueMath(s.v, spec))); break;
         case 'setPC':
           pcAssigned = true;
-          lines.push(assign(mi('pc', 'reg'), cond
+          lines.push(assign(mi('pc', 'm-reg'), cond
             ? row(paren(cond), mo('?'), exprMath(s.v, spec), mo(':'), pcPlus4)
             : exprMath(s.v, spec)));
           break;
@@ -128,26 +129,26 @@ export function stateUpdateMath(spec: InsnSpec): string[] {
           break;
         case 'setCSR': {
           let rhs = exprMath(s.v, spec);
-          const csr = row(mi('CSR', 'reg'), mo('['), mi('csr', 'field'), mo(']'));
+          const csr = row(mi('CSR', 'm-reg'), mo('['), mi('csr', 'm-field'), mo(']'));
           if (s.unless) rhs = row(rhs, sp, text(s.unless === 'rs1zero' ? '(only if rs1 ≠ 0)' : '(only if uimm ≠ 0)'));
           lines.push(assign(csr, rhs));
           break;
         }
         case 'ecall':
           pcAssigned = true;
-          lines.push(row(mi('mtvec', 'reg'), mo('='), mn(0), mo('⇒'), row(mi('σ'), mo('←'), fn('syscall', sub(reg('a7'), text('')), mi('σ')))));
-          lines.push(row(mi('mtvec', 'reg'), mo('≠'), mn(0), mo('⇒'), fn('trap', mn(11))));
+          lines.push(row(mi('mtvec', 'm-reg'), mo('='), mn(0), mo('⇒'), row(mi('σ'), mo('←'), fn('syscall', sub(reg('a7'), text('')), mi('σ')))));
+          lines.push(row(mi('mtvec', 'm-reg'), mo('≠'), mn(0), mo('⇒'), fn('trap', mn(11))));
           break;
         case 'ebreak':
           pcAssigned = true;
-          lines.push(row(mi('mtvec', 'reg'), mo('='), mn(0), mo('⇒'), text('halt for debugger')));
-          lines.push(row(mi('mtvec', 'reg'), mo('≠'), mn(0), mo('⇒'), fn('trap', mn(3))));
+          lines.push(row(mi('mtvec', 'm-reg'), mo('='), mn(0), mo('⇒'), text('halt for debugger')));
+          lines.push(row(mi('mtvec', 'm-reg'), mo('≠'), mn(0), mo('⇒'), fn('trap', mn(3))));
           break;
         case 'mret':
           pcAssigned = true;
-          lines.push(assign(mi('pc', 'reg'), mi('mepc', 'reg')));
-          lines.push(assign(row(mi('mstatus', 'reg'), mo('.'), mi('MIE')), row(mi('mstatus', 'reg'), mo('.'), mi('MPIE'))));
-          lines.push(assign(row(mi('mstatus', 'reg'), mo('.'), mi('MPIE')), mn(1)));
+          lines.push(assign(mi('pc', 'm-reg'), mi('mepc', 'm-reg')));
+          lines.push(assign(row(mi('mstatus', 'm-reg'), mo('.'), mi('MIE')), row(mi('mstatus', 'm-reg'), mo('.'), mi('MPIE'))));
+          lines.push(assign(row(mi('mstatus', 'm-reg'), mo('.'), mi('MPIE')), mn(1)));
           break;
         case 'fence': lines.push(text('no effect on a single in-order hart')); break;
         case 'wfi': lines.push(text('stall until an interrupt is pending (hint)')); break;
@@ -155,13 +156,13 @@ export function stateUpdateMath(spec: InsnSpec): string[] {
     }
   };
   walk(spec.semantics);
-  if (!pcAssigned) lines.push(assign(mi('pc', 'reg'), pcPlus4));
+  if (!pcAssigned) lines.push(assign(mi('pc', 'm-reg'), pcPlus4));
   return lines.map(l => `<math display="block">${l}</math>`);
 }
 
 /** Small-step operational rule(s). Branches get a taken and a not-taken rule. */
 export function inferenceRules(spec: InsnSpec): { name: string; math: string }[] {
-  const fetch = row(fn('decode', row(sub(mi('M'), mn(32)), mo('['), mi('pc', 'reg'), mo(']'))), mo('='), text(spec.mnemonic + ' '), mi(operandLabel(spec)));
+  const fetch = row(fn('decode', row(sub(mi('M'), mn(32)), mo('['), mi('pc', 'm-reg'), mo(']'))), mo('='), text(spec.mnemonic + '\u00a0'), mi(operandLabel(spec)));
   const state = (pc: string, x: string, m: string) => row(mo('⟨'), pc, mo(','), x, mo(','), m, mo('⟩'));
   const rule = (premises: string[], concl: string) =>
     `<math display="block"><mfrac linethickness="1.2px">${row(...premises.flatMap((p, i) => i ? [sp, sp, sp, p] : [p]))}${concl}</mfrac></math>`;
@@ -186,7 +187,7 @@ export function inferenceRules(spec: InsnSpec): { name: string; math: string }[]
       case 'setX': {
         const v = mi('v');
         premises.push(row(v, mo('='), valueMath(s.v, spec)));
-        x = upd(X, mi('rd', 'field'), v);
+        x = upd(X, mi('rd', 'm-field'), v);
         break;
       }
       case 'setPC': {

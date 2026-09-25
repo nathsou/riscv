@@ -3,7 +3,7 @@ import { h } from '../ui/h.ts';
 import { effect, signal, listen } from '../ui/reactive.ts';
 import { icon } from '../ui/icons.ts';
 import { route, navigate } from '../ui/router.ts';
-import { session, setSource, toggleBreakpoint } from '../app/session.ts';
+import { session, setSource, toggleBreakpoint, backupSource, previousSource } from '../app/session.ts';
 import { EXAMPLES } from '../content/examples.ts';
 import { createEditor } from '../editor/editor.ts';
 import type { EditorHandle } from '../editor/editor.ts';
@@ -79,13 +79,30 @@ export function mount(el: HTMLElement): void {
     if (show) errBanner.replaceChildren(icon(m.status === 'error' ? 'alert' : 'check'), h('span', null, m.message + (m.status === 'error' ? ` at ${hex(m.pc)}` : '')));
   });
 
-  const exampleSel = h('select', { class: 'select', 'aria-label': 'Load example' },
-    h('option', { value: '' }, 'Examples…'),
-    ...EXAMPLES.map(e => h('option', { value: e.id, title: e.description }, e.title)));
+  const exampleSel = h('select', { class: 'select', 'aria-label': 'Load example' });
+  const fillExamples = () => {
+    const prev = previousSource();
+    exampleSel.replaceChildren(h('option', { value: '' }, 'Examples…'),
+      ...EXAMPLES.map(e => h('option', { value: e.id, title: e.description }, e.title)),
+      ...(prev && prev !== session.source.peek() ? [h('option', { value: '__prev' }, '↺ Restore previous program')] : []));
+  };
+  fillExamples();
+  exampleSel.addEventListener('focus', fillExamples);
+  exampleSel.addEventListener('pointerdown', fillExamples);
   exampleSel.addEventListener('change', () => {
-    const ex = EXAMPLES.find(e => e.id === exampleSel.value);
+    const v = exampleSel.value;
     exampleSel.value = '';
+    if (v === '__prev') {
+      const prev = previousSource();
+      if (!prev) return;
+      backupSource();
+      setSource(prev);
+      toast('Restored your previous program');
+      return;
+    }
+    const ex = EXAMPLES.find(e => e.id === v);
     if (!ex) return;
+    backupSource();
     setSource(ex.source, ex.id);
     toast(`Loaded “${ex.title}”`);
   });

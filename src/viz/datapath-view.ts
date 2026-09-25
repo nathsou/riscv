@@ -53,11 +53,11 @@ export function mount(el: HTMLElement): void {
     const spec = findSpec(word | 0);
     const asm = session.loaded.peek();
     const line = asm?.addrToLine.get(m.pc);
-    const src = line !== undefined ? session.source.peek().split('\n')[line - 1]?.trim() : undefined;
+    const src = line !== undefined ? session.source.peek().split('\n')[line]?.trim() : undefined;
     set(insn, 
       h('div', { class: 'pc' }, `pc = 0x${(m.pc >>> 0).toString(16).padStart(8, '0')}  ·  cycle ${m.cycles}`),
       h('div', { class: 'mn' }, disassemble(word, m.pc).text),
-      src ? h('div', { class: 'src', title: `line ${line}` }, `${line}: ${src}`) : null,
+      src ? h('div', { class: 'src', title: `line ${line! + 1}` }, `${line! + 1}: ${src}`) : null,
       spec ? bitfield(spec, { word, compact: true }) : h('p', null, 'Not a valid instruction: the control unit raises illegal.'),
       spec ? h('p', null, spec.summary) : null,
       m.status === 'halted' ? h('p', null, `Program exited with code ${m.exitCode}.`) : m.status === 'error' ? h('p', null, m.message) : null);

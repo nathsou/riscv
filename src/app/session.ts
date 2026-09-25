@@ -154,6 +154,15 @@ export function reset(): void {
   }
 }
 
+/** Keep a copy of the current program so it can be restored after loading another. */
+export function backupSource(): void {
+  const cur = session.source.peek();
+  const isExample = EXAMPLES.some(e => e.source === cur);
+  if (!isExample && cur.trim()) save('source-prev', cur);
+}
+
+export function previousSource(): string | null { return load('source-prev'); }
+
 export function setSource(src: string, exampleId = ''): void {
   session.source.value = src;
   session.exampleId.value = exampleId;
