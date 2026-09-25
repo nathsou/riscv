@@ -61,3 +61,9 @@ export function fromHTML(html: string): Element {
   t.innerHTML = html.trim();
   return t.content.firstElementChild!;
 }
+
+/** Replace an element's children (null/false children are skipped). */
+export function replace(el: Element, ...children: Child[]): void {
+  clear(el);
+  append(el, children);
+}

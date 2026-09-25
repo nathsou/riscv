@@ -72,3 +72,12 @@ test('carry-lookahead is much faster than ripple-carry', () => {
   assert.ok(ripple >= 60, `ripple ${ripple}`);
   assert.ok(cla <= 12, `cla ${cla}`);
 });
+
+test('teaching circuits match their behaviour exhaustively', async () => {
+  const { XOR_FROM_NAND, ADDSUB4 } = await import('../src/learn/defs.ts');
+  for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) assert.ok(checkEquivalence(XOR_FROM_NAND, [a, b]).ok);
+  for (let a = 0; a < 16; a++) for (let b = 0; b < 16; b++) for (let s = 0; s < 2; s++) {
+    const r = checkEquivalence(ADDSUB4, [a, b, s]);
+    assert.ok(r.ok, `${a} ${b} ${s}: ${r.behave} vs ${r.structural}`);
+  }
+});

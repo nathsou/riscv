@@ -43,13 +43,14 @@ function area(r: Rect): Rect {
   return { x: r.x + pad, y: r.y + head + pad * 0.5, w: r.w - 2 * pad, h: r.h - head - pad * 1.5 };
 }
 
-export function drawInterior(ctx: CanvasRenderingContext2D, inst: Instance, r: Rect, camK: number, th: Theme, machine: Machine, t: number): void {
+export function drawInterior(ctx: CanvasRenderingContext2D, inst: Instance, r: Rect, camK: number, th: Theme, machine: Machine | null, t: number): void {
   const a = area(r);
+  if (!machine && ['imem', 'dmem', 'csr'].includes(inst.def.interior!)) return;
   switch (inst.def.interior) {
     case 'pla': return drawPLA(ctx, inst, a, camK, th);
-    case 'imem': return drawIMem(ctx, inst, a, camK, th, machine);
-    case 'dmem': return drawDMem(ctx, inst, a, camK, th, machine);
-    case 'csr': return drawCSR(ctx, inst, a, camK, th, machine);
+    case 'imem': return drawIMem(ctx, inst, a, camK, th, machine!);
+    case 'dmem': return drawDMem(ctx, inst, a, camK, th, machine!);
+    case 'csr': return drawCSR(ctx, inst, a, camK, th, machine!);
     case 'rewire': return drawRewire(ctx, inst, a, camK, th, t);
   }
 }

@@ -43,7 +43,7 @@ export function fmtVal(v: number, width: number): string {
 }
 
 export interface RendererEnv {
-  machine: Machine;
+  machine: Machine | null;
   /** Current animation time in gate delays, or Infinity when settled. */
   time(): number;
   /** Seconds since the last clock edge (for pulses). */
@@ -67,11 +67,18 @@ export class Renderer {
   private th!: Theme;
   private t = Infinity;
 
-  constructor(canvas: HTMLCanvasElement, cpu: Instance, env: RendererEnv) {
+  /** World rect of the root block. */
+  rootRect: Rect;
+  /** Root is a whole CPU: draw the system around it, control nets as tunnels, dim unused paths. */
+  cpuMode: boolean;
+
+  constructor(canvas: HTMLCanvasElement, cpu: Instance, env: RendererEnv, opts: { rootRect?: Rect; cpuMode?: boolean } = {}) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
     this.cpu = cpu;
     this.env = env;
+    this.cpuMode = opts.cpuMode ?? true;
+    this.rootRect = opts.rootRect ?? CPU_RECT;
   }
 
   resize(w: number, h: number): void {
@@ -104,7 +111,7 @@ export class Renderer {
 
   /** World rect of an instance when it and all its ancestors are fully revealed. */
   worldRect(inst: Instance): Rect {
-    if (inst === this.cpu || !inst.parent) return CPU_RECT;
+    if (inst === this.cpu || !inst.parent) return this.rootRect;
     const pr = this.worldRect(inst.parent);
     const ps = inst.parent.structure!;
     layout(ps);
@@ -138,8 +145,8 @@ export class Renderer {
     const k = this.cam.k * this.dpr;
     ctx.setTransform(k, 0, 0, k, -this.cam.x * k, -this.cam.y * k);
     this.drawGrid();
-    drawSystem(ctx, this.sc(1), th, this.env.machine, this.cpu);
-    this.drawBlock(this.cpu, CPU_RECT, null, 1, 1, null);
+    if (this.cpuMode && this.env.machine) drawSystem(ctx, this.sc(1), th, this.env.machine, this.cpu);
+    this.drawBlock(this.cpu, this.rootRect, null, 1, 1, null);
   }
 
   private sc(localK: number): number { return this.cam.k * localK; }
@@ -227,7 +234,7 @@ export class Renderer {
       } else {
         const s = inst === this.cpu ? inst.structure! : inst.ensureEvaluated()!;
         layout(s);
-        this.drawStructure(s, interiorXf(s, r), depth, inst === this.cpu);
+        this.drawStructure(s, interiorXf(s, r), depth, inst === this.cpu && this.cpuMode);
       }
       ctx.restore();
     }
@@ -265,7 +272,7 @@ export class Renderer {
   }
 
   private header(inst: Instance, r: Rect, sr: Rect): void {
-    if (inst === this.cpu) {
+    if (inst === this.cpu && this.cpuMode) {
       const size = Math.min(22, r.h * 0.04);
       this.text(inst.def.name, r.x + 14 / this.cam.k + size * 0.3, r.y + size, size, this.th.dim, 'left', false, 650);
       return;
@@ -554,7 +561,7 @@ export class Renderer {
 /** Aspect ratio (w/h) a block's interior wants. */
 const CUSTOM_ASPECT: Record<string, number> = { pla: 1.45, imem: 2.3, dmem: 2.3, csr: 1.9, rewire: 2.6 };
 
-function interiorAspect(inst: Instance): number {
+export function interiorAspect(inst: Instance): number {
   const d = inst.def;
   if (d.interior) return CUSTOM_ASPECT[d.interior] ?? 1.5;
   const s = inst.structure!;

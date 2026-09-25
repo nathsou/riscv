@@ -36,7 +36,7 @@ export class Machine implements Hart {
   pc = 0;
   nextPc = 0;
   readonly mem = new Memory();
-  readonly history = new History();
+  readonly history: History;
 
   // CSRs
   mstatus = 0;
@@ -78,7 +78,8 @@ export class Machine implements Hart {
   /** Invoked when console output changes (for the UI). */
   onOutput: (() => void) | null = null;
 
-  constructor() {
+  constructor(historyCap = 1 << 18) {
+    this.history = new History(historyCap);
     this.history.target = { setReg: (r, v) => this.setReg(r, v), setMem: (a, w, v) => this.setMem(a, w, v) };
   }
 
