@@ -78,7 +78,7 @@ export function mount(el: HTMLElement): void {
           h('a', { class: 'btn big', href: '#/lab' }, icon('code'), 'Open the Lab'))),
       heroCpu()),
     h('section', { class: 'areas' },
-      card('#/learn', 'book', 'Learn', 'Thirteen chapters, from bits and gates to pipelines and interrupts, with circuits you can poke.'),
+      card('#/learn', 'book', 'Learn', 'Fourteen chapters, from bits and gates to pipelines and interrupts, with circuits you can poke and build.'),
       card('#/lab', 'code', 'Lab', 'An editor, assembler and simulator with reverse stepping, breakpoints, a console and a 64×64 screen.'),
       card('#/datapath', 'cpu', 'Datapath', 'The single-cycle and pipelined CPU, with an abstraction slider from system to gates.'),
       card('#/ref', 'list', 'Reference', 'All 56 RV32IM instructions: encodings, formal semantics, and the paths they light up.')),

@@ -17,6 +17,7 @@ import { circuitWidget } from './widgets/circuit.ts';
 import { miniSim } from './widgets/minisim.ts';
 import { quiz, predict } from './widgets/quiz.ts';
 import { fdeWidget, encoderWidget, asmExplorer, controlTable } from './widgets/misc.ts';
+import { sandbox } from './widgets/sandbox.ts';
 import { codeBlock } from '../reference/code.ts';
 import type { Def } from '../hw/netlist.ts';
 
@@ -69,6 +70,9 @@ export const CHAPTERS: Chapter[] = [
       H('One gate to rule them all'),
       P('NAND (“not and”) is <b>universal</b>: any logic function can be built from NANDs alone. Here is exclusive-or, made from four of them. Check the truth table against the XOR above.'),
       circuitWidget({ def: XOR_FROM_NAND, table: true, height: 220 }),
+      H('Your turn'),
+      P('Describe a circuit in a few lines — one gate per line — and it is drawn and simulated as you type. The badge checks your circuit against every input combination. Can you rebuild XOR from NANDs without peeking?'),
+      sandbox(['xor-nand']),
       quiz({ id: 'gates-1', q: 'Which single gate outputs 1 exactly when its two inputs are <i>equal</i>?', options: ['NAND', 'NOR', 'XNOR (XOR followed by NOT)', 'OR'], answer: 2, explain: 'XOR is 1 when the inputs differ, so its complement XNOR is 1 when they are equal. The CPU uses this idea to compare numbers.' }),
     ],
   },
@@ -319,6 +323,20 @@ loop:
       }),
       P('Interrupts are <b>precise</b>: every instruction before the trapping point has completed and none after it has started, so the handler can resume the program as if nothing happened. In the pipeline that means flushing the younger instructions in flight — the pipeline engine on this site does exactly that.'),
       quiz({ id: 'trap-1', q: 'A handler for <span class="mono">ecall</span> returns with mret. What must it do first, or the program will loop forever?', options: ['Clear mcause', 'Add 4 to mepc', 'Re-enable interrupts', 'Nothing'], answer: 1, explain: 'For exceptions, mepc points at the instruction that trapped. Returning there would execute the ecall again, so the handler skips it by adding 4.' }),
+    ],
+  },
+  {
+    id: 'build', title: 'Build your own circuits', blurb: 'Hardware editing: describe circuits, test them exhaustively, beat the gate count.',
+    body: () => [
+      P('Real hardware is designed in <b>hardware description languages</b> such as Verilog or VHDL: text that describes gates and the wires between them, which tools then turn into transistors. Here is a tiny one. Each line creates a gate (or a small module) and names its output; the circuit is drawn and simulated live.'),
+      codeBlock(`in a, b, cin          # inputs
+out s, cout           # outputs
+s1, c1 = ha(a, b)     # a half adder has two outputs: sum, carry
+s, c2  = ha(s1, cin)
+cout   = or(c1, c2)`),
+      P('Every challenge is checked <b>exhaustively</b>: with n inputs there are only 2ⁿ combinations, so the checker tries them all and shows a counterexample if your circuit differs. This is the same equivalence check the test suite runs on every block of the CPU, comparing its gate-level structure with its behaviour.'),
+      sandbox(),
+      Note('Gate count and delay matter: fewer gates mean less area and power, and fewer gate delays on the longest path mean a faster clock. The stats line shows both for your circuit.'),
     ],
   },
 ];

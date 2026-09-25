@@ -24,6 +24,7 @@ import type { Rect } from './renderer.ts';
 import { SYSTEM, CPU_RECT } from './interiors.ts';
 import { theme, invalidateTheme } from './theme.ts';
 import { netTip, instTip } from './tips.ts';
+import { showCmos, isGate } from './cmos.ts';
 
 interface Cam { x: number; y: number; k: number }
 interface Level { inst: Instance | null; label: string }
@@ -531,6 +532,7 @@ export function mountDatapathPanel(el: HTMLElement, opts: { docked?: boolean }):
     const [sx, sy] = local(e);
     const hit = renderer.hitTest(sx, sy);
     const inst = hit.node?.inst;
+    if (inst && isGate(inst) && renderer.revealOf(renderer.worldRect(inst)) === 0 && (hit.node!.rect.w > 60)) { showCmos(inst); return; }
     if (inst && expandable(inst)) focusOn(inst);
     else if (inst?.parent) focusOn(inst.parent);
   });

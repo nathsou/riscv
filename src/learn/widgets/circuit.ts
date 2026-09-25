@@ -11,6 +11,7 @@ import { Renderer, interiorAspect } from '../../viz/renderer.ts';
 import { netTip, instTip } from '../../viz/tips.ts';
 import { showTip, hideTip } from '../../ui/components/tooltip.ts';
 import { onCleanup } from '../../ui/reactive.ts';
+import { showCmos, isGate } from '../../viz/cmos.ts';
 
 const wrapped = new Map<Def, Def>();
 /** Give a leaf gate a one-node structure so it can be drawn with its terminals. */
@@ -160,6 +161,11 @@ export function circuitWidget(o: CircuitOpts): HTMLElement {
     if (t) showTip(t, e.clientX, e.clientY); else hideTip();
   });
   canvas.addEventListener('pointerleave', () => { hideTip(); ren.hover = { net: null, inst: null }; kick(); });
+  canvas.addEventListener('dblclick', e => {
+    const r = canvas.getBoundingClientRect();
+    const hit = ren.hitTest(e.clientX - r.left, e.clientY - r.top);
+    if (hit.node && hit.node.inst !== inst && isGate(hit.node.inst)) showCmos(hit.node.inst);
+  });
 
   evaluate(false);
   return h('figure', { class: 'widget circuit' }, stage,

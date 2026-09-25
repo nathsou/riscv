@@ -159,3 +159,30 @@
 .pipe-stats .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
 .pipe-stats .tv { font: 650 16px var(--mono); color: var(--text); }
 .pipe-stats .tl { font-size: 11px; color: var(--text-faint); }
+
+/* ---------- transistor easter egg ---------- */
+.cmos-modal { position: fixed; inset: 0; z-index: 150; display: grid; place-items: center; background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(3px); padding: 16px; }
+.cmos-card { background: var(--panel); border: 1px solid var(--line-2); border-radius: 14px; box-shadow: var(--shadow); max-width: 760px; width: 100%; max-height: 90vh; overflow: auto; padding: 16px 20px; }
+.cmos-head { display: flex; align-items: center; gap: 8px; font-size: 16px; }
+.cmos-head .spacer { flex: 1; }
+.cmos-card p { font-size: 13.5px; line-height: 1.55; }
+.cmos-body { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.cmos-then { font-size: 12px; color: var(--text-faint); }
+.cmos-svg { width: 320px; max-width: 100%; height: auto; background: var(--bg); border-radius: 10px; border: 1px solid var(--line); }
+.cmos-svg .rail { stroke-width: 3; }
+.cmos-svg .rail.vdd, .cmos-svg .w.vdd, .cmos-svg .w.hi { stroke: var(--one); }
+.cmos-svg .rail.gnd, .cmos-svg .w.gnd, .cmos-svg .w.lo { stroke: var(--data); }
+.cmos-svg .w { stroke-width: 2; fill: none; }
+.cmos-svg circle.w.hi { fill: var(--one); }
+.cmos-svg circle.w.lo { fill: var(--data); }
+.cmos-svg .w.mid { stroke: var(--line-3); }
+.cmos-svg .fet .ch { stroke-width: 4; }
+.cmos-svg .fet.on .ch { stroke: var(--warn); }
+.cmos-svg .fet.off .ch { stroke: var(--line-3); stroke-dasharray: 3 3; }
+.cmos-svg .fet .gt, .cmos-svg .fet .gw { stroke: var(--text-dim); stroke-width: 2; }
+.cmos-svg .fet .bub { fill: var(--bg); stroke: var(--text-dim); stroke-width: 1.6; }
+.cmos-svg text { font: 600 11px var(--mono); fill: var(--text-dim); }
+.cmos-svg .gl { text-anchor: end; fill: var(--ctrl); }
+.cmos-svg .tl { fill: var(--text-faint); font-size: 10px; }
+.cmos-svg .rl { fill: var(--text-faint); font-size: 10px; }
+.cmos-svg .ol { text-anchor: end; fill: var(--text); }

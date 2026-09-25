@@ -25,6 +25,6 @@ export function instTip(inst: Instance): HTMLElement {
   return h('div', null,
     h('h4', null, d.name, lab ? h('span', { class: 'mono' }, '  ' + lab) : null),
     d.doc ? h('div', { class: 'dim' }, d.doc) : null,
-    (inst.hasStructure || d.interior) ? h('div', { class: 'faint', style: 'margin-top:4px;font-size:11px' }, 'Double-click to look inside') : null);
+    (inst.hasStructure || d.interior || ['and', 'or', 'nand', 'nor', 'not', 'buf', 'xor', 'xnor'].includes(d.shape ?? '')) ? h('div', { class: 'faint', style: 'margin-top:4px;font-size:11px' }, 'Double-click to look inside') : null);
 }
 
