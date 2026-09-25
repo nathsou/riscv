@@ -80,7 +80,7 @@ export function mountDatapathPanel(el: HTMLElement, opts: { docked?: boolean }):
   const docked = !!opts.docked;
   const selected = signal<Instance | null>(null);
   const showValues = signal<boolean>(loadJSON('dp-values', true));
-  const animate = signal<boolean>(loadJSON('dp-animate', true));
+  const animate = signal<boolean>(loadJSON('dp-animate', !matchMedia('(prefers-reduced-motion: reduce)').matches));
   const cla = signal<boolean>(loadJSON('dp-cla', false));
   showValues.subscribe(v => saveJSON('dp-values', v));
   animate.subscribe(v => saveJSON('dp-animate', v));
@@ -478,13 +478,43 @@ export function mountDatapathPanel(el: HTMLElement, opts: { docked?: boolean }):
     dirty = true;
   }, { passive: false });
 
+  // two-finger pinch zoom
+  const touches = new Map<number, { x: number; y: number }>();
+  let pinch: { d: number; k: number; wx: number; wy: number } | null = null;
+  const pinchInfo = () => {
+    const [a, b] = [...touches.values()];
+    const r = canvas.getBoundingClientRect();
+    return { d: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2 - r.left, my: (a.y + b.y) / 2 - r.top };
+  };
   canvas.addEventListener('pointerdown', e => {
     if (!renderer || e.button !== 0) return;
     canvas.setPointerCapture(e.pointerId);
+    if (e.pointerType === 'touch') touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (touches.size === 2) {
+      const p = pinchInfo();
+      const [wx, wy] = renderer.toWorld(p.mx, p.my);
+      pinch = { d: p.d, k: renderer.cam.k, wx, wy };
+      drag = null;
+      camAnim = null;
+      return;
+    }
     drag = { x: e.clientX, y: e.clientY, cx: renderer.cam.x, cy: renderer.cam.y, moved: false };
   });
+  const endTouch = (e: PointerEvent) => {
+    touches.delete(e.pointerId);
+    if (pinch && touches.size < 2) { pinch = null; syncPosFromCam(); persist(); }
+  };
+  canvas.addEventListener('pointercancel', endTouch);
   canvas.addEventListener('pointermove', e => {
     if (!renderer) return;
+    if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && touches.size === 2) {
+      const p = pinchInfo();
+      const k = Math.max(levelCam(0).k * 0.6, Math.min(400, pinch.k * p.d / Math.max(1, pinch.d)));
+      renderer.cam = { k, x: pinch.wx - p.mx / k, y: pinch.wy - p.my / k };
+      dirty = true;
+      return;
+    }
     if (drag) {
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
       if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
@@ -509,7 +539,9 @@ export function mountDatapathPanel(el: HTMLElement, opts: { docked?: boolean }):
     if (tipEl) showTip(tipEl, e.clientX, e.clientY); else hideTip();
   });
   canvas.addEventListener('pointerup', e => {
-    if (!renderer) return;
+    const wasPinch = !!pinch;
+    endTouch(e);
+    if (!renderer || wasPinch) return;
     const wasDrag = drag?.moved;
     drag = null;
     canvas.style.cursor = 'default';

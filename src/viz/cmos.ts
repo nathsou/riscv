@@ -78,7 +78,8 @@ export function showCmos(inst: Instance): void {
       h('div', { class: 'cmos-body', html: body }),
       note ? h('p', { class: 'faint' }, note) : null,
       h('p', { class: 'faint small' }, 'You found the bottom of the abstraction stack: below this are electrons.')));
-  const done = () => { dialog.remove(); document.removeEventListener('keydown', onKey); };
+  const done = () => { dialog.remove(); document.removeEventListener('keydown', onKey); window.removeEventListener('hashchange', done); };
+  window.addEventListener('hashchange', done);
   const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') done(); };
   close.addEventListener('click', done);
   dialog.addEventListener('click', e => { if (e.target === dialog) done(); });

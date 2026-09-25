@@ -56,7 +56,7 @@ export function mount(el: HTMLElement): void {
     for (const [k, a] of links) a.classList.toggle('on', k === key);
     links.get(key)?.scrollIntoView({ block: 'nearest' });
     scroller.scrollTop = 0;
-    document.title = `${spec(key) ?? (GUIDES.find(g => g[0] === key)?.[1] ?? 'Reference')} · RISC-V, gate by gate`;
+    document.title = `${spec(key) ?? (GUIDES.find(g => g[0] === key)?.[1] ?? 'Reference')} · RISC-V, Gate by Gate`;
   });
   // keyboard: j/k (or ←/→) for next/previous instruction
   const onKey = (e: KeyboardEvent) => {

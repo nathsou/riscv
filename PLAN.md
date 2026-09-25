@@ -408,8 +408,28 @@ These are the defaults chosen. Any of them can be changed.
 4. **Misaligned access traps.** Syscalls use the **RARS numbering** plus Linux `write`/`exit`.
 5. **Single-cycle first, pipeline in M7.** A multi-cycle (FSM-controlled) model is optional. It is pedagogically
    nice, but it would be a third CPU to lay out by hand.
-6. **Open:**
-   - Should students be able to *edit* hardware? For example, rewire the ALU or write a module in a mini-HDL and watch the equivalence badge.
-     This would be a strong addition but a large one, so it is proposed as post-M9.
-   - Is a machine-mode trap and interrupt chapter wanted, with a timer interrupt driving the framebuffer?
-   - Is English the only language? Content lives in TS modules either way, so i18n could be added later.
+6. **Resolved with the user:**
+   - Hardware editing: **yes**. Implemented as a gate-level mini-HDL sandbox (Learn chapter 14, plus a challenge in
+     chapter 2) with an exhaustive equivalence badge and counterexamples. Rewiring the CPU's own modules is not supported.
+   - Trap and interrupt chapter: **yes** (chapter 13, driven by the timer example).
+   - Single-cycle then pipeline, no multi-cycle: **yes, for now**.
+   - Misaligned accesses trap, RARS syscalls: **yes**.
+   - English only; content lives in TS modules.
+
+## 13. Implementation notes and deviations
+
+- **Tests:** `node --test` with Node's native type stripping (no test framework), so `erasableSyntaxOnly` is on and
+  there are no enums. 95 tests cover assembler goldens and round-trips, the simulator, reverse execution, gate-level
+  equivalence of every block, single-cycle ≡ ISA and pipeline ≡ ISA on every example, the Try-it programs and the HDL.
+- **No worker.** The ISA simulator runs about 20 M instructions/s on the main thread in 12 ms slices, which is fast enough.
+- **Semantic zoom uses "lenses".** Interiors rarely share their block's aspect ratio (a 32-bit ripple adder is 13:1),
+  so a revealed block grows into a rect matching its interior, veils its surroundings and draws on top. Only the block
+  under the view centre opens. Wide bit-sliced structures (the ripple adder) wrap into rows of 8 with labelled net stubs.
+- **Pipeline timing vs. effects.** The 5-stage engine models timing cycle by cycle (forwarding, load-use stall, EX branch
+  resolution with a two-cycle flush, precise traps), but applies each instruction's architectural effect when it is in EX
+  via the shared machine's `step()`. Older instructions have always executed by then and younger ones never have, so
+  state is exactly the ISA's; the diagram shows the write-back in WB. The pipeline view is SVG, not the netlist renderer.
+- **Custom interiors** (the control PLA, memories, the CSR file, immediate rewiring) are pictures driven by live
+  values rather than netlists; the PLA picture is generated from the same instruction table as the gate-level PLA.
+- **Easter egg:** double-click a logic gate (in the datapath at gate level, or in any Learn circuit) to see its CMOS
+  transistors.
