@@ -43,8 +43,10 @@ const LAYOUT: Record<string, [number, number, number?, number?]> = {
   regfile: [480, 280, 140, 150],
   immgen: [490, 470, 120, 60],
   exception: [1040, 60, 100, 100],
-  irq: [960, 120],
-  handler: [960, 150],
+  irq: [985, 120],
+  handler: [985, 150],
+  isMret: [812, 240],
+  zimmExt: [600, 591],
   bcomp: [690, 180, 100, 76],
   nextpc: [850, 150, 110, 110],
   aMux: [720, 300, 26, 80],
@@ -54,7 +56,7 @@ const LAYOUT: Record<string, [number, number, number?, number?]> = {
   csrSrc: [700, 560, 26, 60],
   muldiv: [800, 490, 90, 70],
   csr: [800, 590, 110, 90],
-  dmem: [960, 300, 130, 150],
+  dmem: [985, 300, 125, 150],
   wbMux: [1160, 290, 30, 170],
 };
 
@@ -140,8 +142,28 @@ export const SINGLE_CPU: Def = {
       if (p[2]) n.w = p[2];
       if (p[3]) n.h = p[3];
     }
-    const hide = new Set(['one', 'zero', 'pcbits', 'zimmExt', 'isMret']);
+    const hide = new Set(['one', 'zero', 'pcbits']);
     for (const n of s.nodes) if (hide.has(n.inst.name)) { n.w = 0; n.h = 0; n.x = -999; }
+    // Hand-routed feedback and long-haul buses (structure coordinates).
+    const via = (net: string, sink: string, pts: [number, number][]) => {
+      const n = s.net(net)!;
+      (n.viaTo ??= {})[sink] = pts;
+    };
+    via('pc+4', 'pcMux', [[306, 172], [306, 140], [10, 140]]);
+    via('pc+4', 'wbMux', [[306, 172], [306, 10], [1150, 10]]);
+    via('write-back', 'regfile', [[1205, 375], [1205, 4], [464, 4]]);
+    via('target', 'pcMux', [[972, 258], [972, 686], [16, 686]]);
+    via('mtvec', 'pcMux', [[930, 644], [930, 692], [22, 692]]);
+    via('mepc', 'pcMux', [[938, 662], [938, 697], [28, 697]]);
+    via('pc', 'aMux', [[190, 355], [190, 452], [700, 452]]);
+    via('alu result', 'wbMux', [[905, 375], [905, 288], [1140, 288]]);
+    via('rs2 value', 'dmem', [[636, 380], [636, 468], [976, 468]]);
+    via('csr', 'csr', [[460, 567], [460, 548], [780, 548]]);
+    const pcb = s.nodes.find(n => n.inst.name === 'pcbits')!;
+    pcb.outs[0].name = 'pc[0]';
+    pcb.outs[1].name = 'pc[1]';
+    pcb.outs[0].tunnel = pcb.outs[1].tunnel = true;
+    for (const t of ['pcSel', 'misaligned pc', 'mem fault', 'trap', 'funct3']) s.net(t)!.tunnel = true;
     s.w = 1230;
     s.h = 700;
     s.laidOut = true;

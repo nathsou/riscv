@@ -1,0 +1,96 @@
+/* ---------- datapath panel ---------- */
+.dp-root { display: flex; flex-direction: column; min-height: 0; }
+.dp-head { gap: 6px; text-transform: none; letter-spacing: 0; overflow: hidden; }
+.dp-head > span:first-of-type { text-transform: uppercase; letter-spacing: 0.06em; }
+.dp-head .iconbtn { width: 26px; height: 26px; }
+.dp-head .iconbtn svg { width: 15px; height: 15px; }
+.btn.toggle.on { color: var(--data); background: color-mix(in srgb, var(--data) 12%, transparent); }
+
+.dp-crumbs { display: flex; align-items: center; gap: 2px; min-width: 0; overflow: hidden; margin-left: 8px; font-weight: 550; }
+.dp-crumbs .crumb {
+  border: 0; background: none; color: var(--text-faint); cursor: pointer; font: inherit; font-size: 12px;
+  padding: 2px 5px; border-radius: 5px; white-space: nowrap;
+}
+.dp-crumbs .crumb:hover { color: var(--text); background: var(--panel-2); }
+.dp-crumbs .crumb.on { color: var(--data); }
+.dp-crumbs .sep { color: var(--text-faint); opacity: 0.6; }
+
+.dp-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.dp-stage { position: relative; flex: 1; min-height: 120px; overflow: hidden; background: var(--bg); }
+.dp-canvas { position: absolute; inset: 0; display: block; touch-action: none; outline: none; }
+.dp-overlay {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(3px);
+}
+.dp-ov-card { background: var(--panel); border: 1px solid var(--line-2); border-radius: 12px; padding: 18px 20px; max-width: 360px; box-shadow: var(--shadow); }
+.dp-ov-card h4 { margin: 0 0 6px; }
+.dp-ov-card p { margin: 0 0 12px; font-size: 13px; }
+
+.dp-bottom { flex: none; display: flex; align-items: center; gap: 16px; padding: 6px 12px 8px; border-top: 1px solid var(--line); background: var(--bg-2); flex-wrap: wrap; }
+.dp-abstraction { flex: 1 1 360px; display: flex; align-items: center; gap: 10px; min-width: 240px; }
+.dp-ab-end { color: var(--text-faint); display: grid; place-items: center; }
+.dp-ab-end svg { width: 16px; height: 16px; }
+.dp-slider-box { position: relative; flex: 1; padding-bottom: 18px; }
+.dp-slider { width: 100%; accent-color: var(--data); margin: 4px 0 0; cursor: pointer; }
+.dp-ticks { position: absolute; left: 8px; right: 8px; top: 24px; height: 16px; }
+.dp-tick {
+  position: absolute; transform: translateX(-50%); border: 0; background: none; cursor: pointer;
+  font-size: 10.5px; color: var(--text-faint); white-space: nowrap; padding: 0 2px; font-family: inherit;
+}
+.dp-tick:first-child { transform: none; }
+.dp-tick:last-child { transform: translateX(-100%); }
+.dp-tick:hover { color: var(--text); }
+.dp-tick.on { color: var(--data); font-weight: 650; }
+
+.dp-legend { display: flex; gap: 10px; align-items: center; font-size: 11.5px; color: var(--text-dim); flex-wrap: wrap; }
+.dp-legend .lg { display: inline-flex; align-items: center; gap: 5px; }
+.dp-legend .lg::before { content: ''; width: 14px; height: 3px; border-radius: 2px; background: currentColor; }
+.dp-legend .lg.data::before { background: var(--data); }
+.dp-legend .lg.ctrl::before { background: var(--ctrl); }
+.dp-legend .lg.addr::before { background: var(--addr); }
+.dp-legend .lg.zero::before { background: var(--zero); }
+
+.dp-wave { flex: none; border-top: 1px solid var(--line); background: var(--bg-2); max-height: 220px; overflow: auto; }
+.dp-wave-head { display: flex; align-items: center; gap: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: var(--text-dim); }
+.dp-wave-head svg { width: 14px; height: 14px; }
+.dp-wave-head .faint { font-weight: 400; }
+.dp-wave-head .spacer { flex: 1; }
+.dp-wave-canvas { display: block; }
+
+/* ---------- full-page datapath view ---------- */
+.dpv { height: 100%; display: flex; flex-direction: column; background: var(--bg); }
+.dpv-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 8px; padding: 8px; }
+.dpv-main > .panel { min-height: 0; }
+.dpv-side { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; }
+.dpv-side .panel { flex: none; }
+.dpv-side .panel-body { padding: 10px 12px; overflow: visible; }
+.dpv-insn .mn { font-family: var(--mono); font-size: 18px; font-weight: 650; color: var(--data); }
+.dpv-insn .pc { font-family: var(--mono); font-size: 12px; color: var(--addr); }
+.dpv-insn .src { font-family: var(--mono); font-size: 12px; color: var(--text-faint); margin-top: 4px; white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+.dpv-insn .bitfield { margin-top: 10px; }
+.dpv-insn p { font-size: 13px; color: var(--text-dim); margin: 8px 0 0; line-height: 1.45; }
+.ctl-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.ctl-table td { padding: 3px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.ctl-table td:first-child { font-family: var(--mono); color: var(--ctrl); white-space: nowrap; }
+.ctl-table td.v { font-family: var(--mono); color: var(--text); text-align: right; white-space: nowrap; }
+.ctl-table tr.off td { opacity: 0.45; }
+.ctl-table td.m { color: var(--text-dim); }
+.dpv-sel h4 { margin: 0 0 6px; font-size: 14px; }
+.dpv-sel p { margin: 0; font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+.dpv-sel .ports { margin-top: 8px; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-family: var(--mono); font-size: 12px; }
+.dpv-sel .ports .n { color: var(--text-faint); }
+.dpv-console { font-family: var(--mono); font-size: 12px; white-space: pre-wrap; max-height: 140px; overflow: auto; color: var(--ok); }
+
+@media (max-width: 900px) {
+  .dpv-main { grid-template-columns: 1fr; grid-template-rows: minmax(420px, 1fr) auto; overflow-y: auto; }
+  .dp-head .btn.toggle { display: none; }
+}
+
+.dp-root { container-type: inline-size; }
+.dp-ticks.compact .dp-tick:not(.on) { visibility: hidden; }
+@container (max-width: 560px) {
+  .dp-crumbs { display: none; }
+  .dp-head .btn.toggle { padding: 0 6px; }
+  .dp-head > span:first-of-type { display: none; }
+  .dp-legend .faint { display: none; }
+}

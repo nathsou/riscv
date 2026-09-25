@@ -130,6 +130,13 @@ export class Instance {
     return s;
   }
 
+  /** Discard the built structure (e.g. after swapping a module choice). */
+  rebuild(): void {
+    this._built = false;
+    this._s = null;
+    this.evalEpoch = -2;
+  }
+
   get path(): string {
     return this.parent ? `${this.parent.path}/${this.name}` : this.name;
   }
@@ -158,6 +165,10 @@ export class Net {
   routes: number[][] = [];
   /** Optional routing waypoints hint (per structure-local coordinates). */
   via?: [number, number][];
+  /** Waypoints for the route to one particular sink (by instance name). */
+  viaTo?: Record<string, [number, number][]>;
+  /** Draw as labelled stubs (net labels) instead of a long wire. */
+  tunnel?: boolean;
   /** Liveness (is this signal used by the current instruction?). */
   live = true;
   constructor(id: number, width: number, name: string, kind: SigKind) {
@@ -328,7 +339,9 @@ export class Builder {
 }
 
 // ------------------------------------------------------------------ evaluation
-const delayCache = new WeakMap<Def, number[]>();
+let delayCache = new WeakMap<Def, number[]>();
+
+export function clearDelayCache(): void { delayCache = new WeakMap(); }
 
 /** Per-output propagation delay of a module, in gate delays. */
 export function delays(def: Def): number[] {

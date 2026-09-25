@@ -154,10 +154,50 @@ export const RIPPLE_ADDER = (w: number) => memo('ripple' + w, () => ({
     b.out('sum', b.add(JOIN(w), sums, { name: 'join' })[0]);
     b.out('cout', carry);
   },
-  layout: bitSliceRowLayout,
+  layout: rippleLayout,
   doc: `Adds two ${w}-bit numbers with a chain of full adders. Simple and small, but slow: the carry must ripple through all ${w} stages, so the delay grows linearly with the width.`,
   level: 'full adders',
 }));
+
+/**
+ * Wide ripple adders: rows of 8 full adders (LSB top right), the carry
+ * snaking from the end of one row to the start of the next. Bit buses are
+ * shown as labelled net stubs instead of 32-way fan-out bars.
+ */
+export function rippleLayout(s: Structure): void {
+  const fas = s.nodes.filter(n => /^fa\d+$/.test(n.inst.name));
+  const w = fas.length;
+  if (w <= 8) return bitSliceRowLayout(s);
+  const idx = (n: typeof fas[0]) => Number(n.inst.name.slice(2));
+  const per = 8, rows = Math.ceil(w / per);
+  const sw = 54, sh = 46, gx = 34, rowH = sh + 92, x0 = 60, y0 = 44;
+  for (const n of fas) {
+    const i = idx(n), r = Math.floor(i / per), c = i % per;
+    n.x = x0 + (per - 1 - c) * (sw + gx);
+    n.y = y0 + r * rowH;
+    n.w = sw; n.h = sh;
+  }
+  for (const n of s.nodes) {
+    if (fas.includes(n)) continue;
+    n.w = 0; n.h = 0; n.x = -999;
+    if (n.inst.name.startsWith('split')) n.outs.forEach((o, i) => { o.name = `${n.inst.name.slice(5).toLowerCase()}${i}`; o.tunnel = true; });
+    if (n.inst.name === 'join') n.ins.forEach(o => { o.tunnel = true; });
+  }
+  const right = x0 + per * (sw + gx) - gx;
+  const byIdx = new Map(fas.map(n => [idx(n), n]));
+  for (let r = 0; r + 1 < rows; r++) {
+    const fa = byIdx.get(r * per + per - 1)!;
+    const net = fa.outs[1];
+    const yb = fa.y + sh + 46;
+    (net.viaTo ??= {})[`fa${r * per + per}`] = [[fa.x - 16, fa.y + sh / 2], [fa.x - 16, yb], [right + 18, yb]];
+  }
+  s.w = right + 60;
+  s.h = y0 + rows * rowH - 30;
+  // carry-in enters at the bottom and runs up the right-hand side to bit 0
+  const cin = s.inputs[2];
+  (cin.viaTo ??= {}).fa0 = [[s.w / 2, s.h - 12], [right + 30, s.h - 12]];
+  s.laidOut = true;
+}
 
 /** Lay out bit-sliced structures as a row: bit w-1 on the left, bit 0 on the right. */
 export function bitSliceRowLayout(s: Structure): void {
