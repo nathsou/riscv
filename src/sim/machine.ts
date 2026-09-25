@@ -52,6 +52,8 @@ export class Machine implements Hart {
 
   instret = 0;
   cycles = 0;
+  /** Executed-instruction counts by spec id (statistics; not rewound). */
+  mix = new Float64Array(64);
 
   status: Status = 'ready';
   message = '';
@@ -93,7 +95,7 @@ export class Machine implements Hart {
     this.icache.clear();
     this.mstatus = 0; this.mie = 0; this.mtvec = 0; this.mscratch = 0;
     this.mepc = 0; this.mcause = 0; this.mtval = 0; this.mtimecmp = CMP_RESET; this.timeSkew = 0;
-    this.instret = 0; this.cycles = 0;
+    this.instret = 0; this.cycles = 0; this.mix.fill(0);
     this.status = 'ready'; this.message = ''; this.exitCode = 0; this.sleepMs = 0;
     this.consoleOut = ''; this.consoleIn = ''; this.keys = []; this.rng = 0x2545f491;
     this.lastRegWrite = -1; this.lastMemWrite = null; this.lastMemRead = null; this.lastTrap = null;
@@ -459,6 +461,7 @@ export class Machine implements Hart {
       const e = this.fetch(pc);
       this.nextPc = (pc + 4) >>> 0;
       e.exec(this);
+      this.mix[e.d.spec.id!]++;
       this.pc = this.nextPc;
       this.instret++;
       this.cycles++;

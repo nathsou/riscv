@@ -1,0 +1,109 @@
+/* Design tokens. Dark "night blueprint" is the default; light is "datasheet paper". */
+:root {
+  color-scheme: dark;
+  --bg: #080c14;
+  --bg-2: #0c121d;
+  --panel: #0f1622;
+  --panel-2: #131c2b;
+  --panel-3: #182335;
+  --line: #1b2638;
+  --line-2: #26354d;
+  --line-3: #34486a;
+  --text: #dbe4f2;
+  --text-dim: #93a3bd;
+  --text-faint: #5d6e8a;
+  --grid: rgba(94, 231, 255, 0.045);
+
+  --data: #5ee7ff;      /* data buses */
+  --data-dim: #1d4a5a;
+  --ctrl: #ffb547;      /* control signals */
+  --ctrl-dim: #5a4520;
+  --addr: #b18cff;      /* addresses / PC */
+  --addr-dim: #3f3163;
+  --clock: #f2f5fa;
+  --one: #7dffb6;       /* logic 1 */
+  --zero: #2a3e52;      /* logic 0 */
+  --ok: #5dffa1;
+  --warn: #ffcf5c;
+  --err: #ff5c7a;
+  --pink: #ff7ad9;
+
+  --glow-data: 0 0 12px rgba(94, 231, 255, 0.45);
+  --glow-ctrl: 0 0 12px rgba(255, 181, 71, 0.4);
+
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  --nav-h: 52px;
+
+  /* syntax */
+  --syn-mnemonic: #5ee7ff;
+  --syn-pseudo: #7fd4ff;
+  --syn-register: #ffb547;
+  --syn-number: #b18cff;
+  --syn-string: #9cf29c;
+  --syn-comment: #5d6e8a;
+  --syn-label: #ff7ad9;
+  --syn-directive: #ff9e6b;
+  --syn-symbol: #dbe4f2;
+  --syn-reloc: #ff7ad9;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f2ec;
+  --bg-2: #efece4;
+  --panel: #fbfaf7;
+  --panel-2: #f3f1ea;
+  --panel-3: #ebe8df;
+  --line: #e0dccf;
+  --line-2: #cfc9b8;
+  --line-3: #b4ad98;
+  --text: #1a2230;
+  --text-dim: #4d5a6e;
+  --text-faint: #8a93a2;
+  --grid: rgba(0, 90, 140, 0.06);
+  --data: #0077a8;
+  --data-dim: #a9cbd9;
+  --ctrl: #b86e00;
+  --ctrl-dim: #e3c89c;
+  --addr: #6b3fd1;
+  --addr-dim: #cbbcef;
+  --clock: #1a2230;
+  --one: #0a9a4f;
+  --zero: #c2c8cf;
+  --ok: #0a9a4f;
+  --warn: #a86b00;
+  --err: #d0254a;
+  --pink: #c02f94;
+  --glow-data: none;
+  --glow-ctrl: none;
+  --shadow: 0 10px 30px rgba(40, 30, 10, 0.12);
+  --syn-mnemonic: #0071a3;
+  --syn-pseudo: #1f86b8;
+  --syn-register: #a45f00;
+  --syn-number: #6b3fd1;
+  --syn-string: #2e7d32;
+  --syn-comment: #8a93a2;
+  --syn-label: #c02f94;
+  --syn-directive: #c2521a;
+  --syn-symbol: #1a2230;
+  --syn-reloc: #c02f94;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]):not([data-theme="light"]) {
+    color-scheme: light;
+    --bg: #f4f2ec; --bg-2: #efece4; --panel: #fbfaf7; --panel-2: #f3f1ea; --panel-3: #ebe8df;
+    --line: #e0dccf; --line-2: #cfc9b8; --line-3: #b4ad98;
+    --text: #1a2230; --text-dim: #4d5a6e; --text-faint: #8a93a2; --grid: rgba(0, 90, 140, 0.06);
+    --data: #0077a8; --data-dim: #a9cbd9; --ctrl: #b86e00; --ctrl-dim: #e3c89c; --addr: #6b3fd1; --addr-dim: #cbbcef;
+    --clock: #1a2230; --one: #0a9a4f; --zero: #c2c8cf; --ok: #0a9a4f; --warn: #a86b00; --err: #d0254a; --pink: #c02f94;
+    --glow-data: none; --glow-ctrl: none; --shadow: 0 10px 30px rgba(40, 30, 10, 0.12);
+    --syn-mnemonic: #0071a3; --syn-pseudo: #1f86b8; --syn-register: #a45f00; --syn-number: #6b3fd1;
+    --syn-string: #2e7d32; --syn-comment: #8a93a2; --syn-label: #c02f94; --syn-directive: #c2521a;
+    --syn-symbol: #1a2230; --syn-reloc: #c02f94;
+  }
+}

@@ -51,6 +51,8 @@ export interface InsnSpec {
   control: Control;
   notes?: string[];
   example: string;
+  /** Index in INSTRUCTIONS (assigned at load). */
+  id?: number;
   /** Computed: mask/match for decoding. */
   mask: number;
   match: number;

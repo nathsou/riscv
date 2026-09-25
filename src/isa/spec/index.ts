@@ -7,6 +7,8 @@ export type { InsnSpec, Control, Category, Ext, OperandKind, AluOp, BrType, WbSe
 
 export const INSTRUCTIONS: InsnSpec[] = [...RV32I, ...RV32M, ...ZICSR];
 
+INSTRUCTIONS.forEach((s, i) => { s.id = i; });
+
 export const BY_MNEMONIC = new Map(INSTRUCTIONS.map(i => [i.mnemonic, i]));
 
 export const CATEGORY_LABELS: Record<InsnSpec['category'], string> = {
