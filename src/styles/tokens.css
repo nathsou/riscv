@@ -15,6 +15,8 @@
   --grid: rgba(94, 231, 255, 0.045);
 
   --data: #5ee7ff;      /* data buses */
+  --primary-text: #04121a;
+  --primary-hover: #8aedff;
   --data-dim: #1d4a5a;
   --ctrl: #ffb547;      /* control signals */
   --ctrl-dim: #5a4520;
@@ -66,6 +68,8 @@
   --text-faint: #8a93a2;
   --grid: rgba(0, 90, 140, 0.06);
   --data: #0077a8;
+  --primary-text: #ffffff;
+  --primary-hover: #006b98;
   --data-dim: #a9cbd9;
   --ctrl: #b86e00;
   --ctrl-dim: #e3c89c;
@@ -99,7 +103,7 @@
     --bg: #f4f2ec; --bg-2: #efece4; --panel: #fbfaf7; --panel-2: #f3f1ea; --panel-3: #ebe8df;
     --line: #e0dccf; --line-2: #cfc9b8; --line-3: #b4ad98;
     --text: #1a2230; --text-dim: #4d5a6e; --text-faint: #8a93a2; --grid: rgba(0, 90, 140, 0.06);
-    --data: #0077a8; --data-dim: #a9cbd9; --ctrl: #b86e00; --ctrl-dim: #e3c89c; --addr: #6b3fd1; --addr-dim: #cbbcef;
+    --data: #0077a8; --primary-text: #ffffff; --primary-hover: #006b98; --data-dim: #a9cbd9; --ctrl: #b86e00; --ctrl-dim: #e3c89c; --addr: #6b3fd1; --addr-dim: #cbbcef;
     --clock: #1a2230; --one: #0a9a4f; --zero: #c2c8cf; --ok: #0a9a4f; --warn: #a86b00; --err: #d0254a; --pink: #c02f94;
     --glow-data: none; --glow-ctrl: none; --shadow: 0 10px 30px rgba(40, 30, 10, 0.12);
     --syn-mnemonic: #0071a3; --syn-pseudo: #1f86b8; --syn-register: #a45f00; --syn-number: #6b3fd1;

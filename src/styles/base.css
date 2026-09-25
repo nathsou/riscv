@@ -60,8 +60,8 @@ main#view { flex: 1; min-height: 0; position: relative; overflow: hidden; }
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: 0.4; cursor: default; }
 .btn svg { width: 16px; height: 16px; }
-.btn.primary { background: var(--data); color: #04121a; border-color: transparent; }
-.btn.primary:hover { filter: brightness(1.08); }
+.btn.primary { background: var(--data); color: var(--primary-text); border-color: transparent; }
+.btn.primary:hover { background: var(--primary-hover); }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--text-dim); }
 .btn.ghost:hover { background: var(--panel-2); color: var(--text); }
 .btn.small { height: 26px; padding: 0 9px; font-size: 12.5px; }
